@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$APPLICATION_CONFIG_DIR$/consoles/db/9b577125-da4c-46ee-a880-b71c1a28a817/console.sql" value="9b577125-da4c-46ee-a880-b71c1a28a817" />
+    <file url="file://$PROJECT_DIR$/GuideResto_INSERT_DATA.sql" value="9b577125-da4c-46ee-a880-b71c1a28a817" />
+  </component>
+</project>
