@@ -61,8 +61,8 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         Connection connection = ConnectionUtils.getConnection();
 
         try (PreparedStatement stmt = connection.prepareStatement(INSERT)) {
-            // appreciation: 1 pour like, 0 pour dislike
-            stmt.setString(1, evaluation.getLikeRestaurant() ? "1" : "0");
+            // appreciation: 'T' pour like, 'F' pour dislike
+            stmt.setString(1, evaluation.getLikeRestaurant() ? "T" : "F"); // CORRIGÉ
             stmt.setDate(2, new java.sql.Date(evaluation.getVisitDate().getTime()));
             stmt.setString(3, evaluation.getIpAddress());
             stmt.setInt(4, evaluation.getRestaurant().getId());
@@ -240,11 +240,10 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         String appreciation = rs.getString("appreciation");
         Date visitDate = rs.getDate("date_eval");
         String ipAddress = rs.getString("adresse_ip");
-        Integer restaurantId = rs.getInt("fk_rest");
+        int restaurantId = rs.getInt("fk_rest");
 
         Restaurant restaurant = RestaurantMapper.getInstance().findById(restaurantId);
-
-        Boolean likeRestaurant = "1".equals(appreciation);
+        Boolean likeRestaurant = "T".equals(appreciation);
 
         return new BasicEvaluation(id, visitDate, restaurant, likeRestaurant, ipAddress);
     }
