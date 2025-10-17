@@ -15,7 +15,8 @@ Les conditions d'évaluation de ce cours sont indiquées dans les supports théo
 Pour bien démarrer ce projet, pensez à réaliser les actions suivantes:
 
 * Suivez le [guide Git](doc/tutoriel-git.md)
-* Préparez et maintenez votre [journal de bord](doc/logbook-template.md)
+* Utiliser des branches pour travailler à plusieurs
+* Commenter proprement vos changements
 
 ## Credits
 
