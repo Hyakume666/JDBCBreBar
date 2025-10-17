@@ -7,20 +7,11 @@ import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Data Mapper pour la classe BasicEvaluation
- * Gère la persistance des évaluations basiques (likes/dislikes) dans la table LIKES
- */
 public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
 
-    // CACHE
-    private static final java.util.Map<Integer, BasicEvaluation> cache = new java.util.HashMap<>();
-
-    // SINGLETON
     private static BasicEvaluationMapper instance;
 
-    private BasicEvaluationMapper() {
-    }
+    private BasicEvaluationMapper() {}
 
     public static BasicEvaluationMapper getInstance() {
         if (instance == null) {
@@ -29,50 +20,33 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         return instance;
     }
 
-    // REQUÊTES SQL
-    private static final String FIND_BY_ID =
-            "SELECT numero, appreciation, date_eval, adresse_ip, fk_rest FROM LIKES WHERE numero = ?";
-
-    private static final String FIND_ALL =
-            "SELECT numero, appreciation, date_eval, adresse_ip, fk_rest FROM LIKES ORDER BY date_eval DESC";
-
-    private static final String FIND_BY_RESTAURANT =
-            "SELECT numero, appreciation, date_eval, adresse_ip, fk_rest FROM LIKES WHERE fk_rest = ? ORDER BY date_eval DESC";
-
-    private static final String INSERT =
-            "INSERT INTO LIKES (appreciation, date_eval, adresse_ip, fk_rest) VALUES (?, ?, ?, ?)";
-
-    private static final String UPDATE =
-            "UPDATE LIKES SET appreciation = ?, date_eval = ?, adresse_ip = ?, fk_rest = ? WHERE numero = ?";
-
+    private static final String FIND_BY_ID = "SELECT numero, appreciation, date_eval, adresse_ip, fk_rest FROM LIKES WHERE numero = ?";
+    private static final String FIND_ALL = "SELECT numero, appreciation, date_eval, adresse_ip, fk_rest FROM LIKES ORDER BY date_eval DESC";
+    private static final String FIND_BY_RESTAURANT = "SELECT numero, appreciation, date_eval, adresse_ip, fk_rest FROM LIKES WHERE fk_rest = ? ORDER BY date_eval DESC";
+    private static final String INSERT = "INSERT INTO LIKES (appreciation, date_eval, adresse_ip, fk_rest) VALUES (?, ?, ?, ?)";
+    private static final String UPDATE = "UPDATE LIKES SET appreciation = ?, date_eval = ?, adresse_ip = ?, fk_rest = ? WHERE numero = ?";
     private static final String DELETE = "DELETE FROM LIKES WHERE numero = ?";
     private static final String EXISTS = "SELECT 1 FROM LIKES WHERE numero = ?";
     private static final String COUNT = "SELECT COUNT(*) FROM LIKES";
     private static final String SEQUENCE = "SELECT SEQ_EVAL.CURRVAL FROM DUAL";
 
-    // CREATE (INSERT)
     @Override
     public BasicEvaluation create(BasicEvaluation evaluation) {
         if (evaluation == null) {
             logger.warn("Tentative de création d'une évaluation basique null");
             return null;
         }
-
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(INSERT)) {
-            // appreciation: 'T' pour like, 'F' pour dislike
-            stmt.setString(1, evaluation.getLikeRestaurant() ? "T" : "F"); // CORRIGÉ
+            stmt.setString(1, evaluation.getLikeRestaurant() ? "T" : "F");
             stmt.setDate(2, new java.sql.Date(evaluation.getVisitDate().getTime()));
             stmt.setString(3, evaluation.getIpAddress());
             stmt.setInt(4, evaluation.getRestaurant().getId());
-
             int rowsAffected = stmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 evaluation.setId(getSequenceValue());
                 connection.commit();
-                cache.put(evaluation.getId(), evaluation);
+                addToCache(evaluation);
                 logger.info("Évaluation basique créée avec succès (ID: {})", evaluation.getId());
                 return evaluation;
             }
@@ -87,24 +61,14 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         return null;
     }
 
-    // READ (SELECT)
     @Override
-    public BasicEvaluation findById(int id) {
-        if (cache.containsKey(id)) {
-            logger.debug("Évaluation basique {} trouvée dans le cache", id);
-            return cache.get(id);
-        }
-
+    protected BasicEvaluation findByIdFromDb(int id) {
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(FIND_BY_ID)) {
             stmt.setInt(1, id);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    BasicEvaluation evaluation = mapResultSetToBasicEvaluation(rs);
-                    cache.put(id, evaluation);
-                    return evaluation;
+                    return mapResultSetToBasicEvaluation(rs);
                 }
             }
         } catch (SQLException ex) {
@@ -117,14 +81,12 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
     public Set<BasicEvaluation> findAll() {
         Set<BasicEvaluation> evaluations = new HashSet<>();
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(FIND_ALL);
              ResultSet rs = stmt.executeQuery()) {
-
             while (rs.next()) {
                 BasicEvaluation evaluation = mapResultSetToBasicEvaluation(rs);
                 evaluations.add(evaluation);
-                cache.put(evaluation.getId(), evaluation);
+                addToCache(evaluation);
             }
             logger.info("{} évaluations basiques chargées", evaluations.size());
         } catch (SQLException ex) {
@@ -133,31 +95,16 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         return evaluations;
     }
 
-    /**
-     * Recherche toutes les évaluations basiques d'un restaurant
-     */
-    public Set<BasicEvaluation> findByRestaurant(Restaurant restaurant) {
-        if (restaurant == null || restaurant.getId() == null) {
-            return new HashSet<>();
-        }
-        return findByRestaurantId(restaurant.getId());
-    }
-
-    /**
-     * Recherche toutes les évaluations basiques par ID de restaurant
-     */
     public Set<BasicEvaluation> findByRestaurantId(int restaurantId) {
         Set<BasicEvaluation> evaluations = new HashSet<>();
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(FIND_BY_RESTAURANT)) {
             stmt.setInt(1, restaurantId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     BasicEvaluation evaluation = mapResultSetToBasicEvaluation(rs);
                     evaluations.add(evaluation);
-                    cache.put(evaluation.getId(), evaluation);
+                    addToCache(evaluation);
                 }
             }
         } catch (SQLException ex) {
@@ -166,28 +113,23 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         return evaluations;
     }
 
-    // UPDATE
     @Override
     public boolean update(BasicEvaluation evaluation) {
         if (evaluation == null || evaluation.getId() == null) {
             logger.warn("Tentative de mise à jour d'une évaluation basique null ou sans ID");
             return false;
         }
-
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(UPDATE)) {
-            stmt.setString(1, evaluation.getLikeRestaurant() ? "T" : "F");
+            stmt.setString(1, evaluation.getLikeRestaurant() ? "1" : "0");
             stmt.setDate(2, new java.sql.Date(evaluation.getVisitDate().getTime()));
             stmt.setString(3, evaluation.getIpAddress());
             stmt.setInt(4, evaluation.getRestaurant().getId());
             stmt.setInt(5, evaluation.getId());
-
             int rowsAffected = stmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 connection.commit();
-                cache.put(evaluation.getId(), evaluation);
+                addToCache(evaluation);
                 logger.info("Évaluation basique {} mise à jour avec succès", evaluation.getId());
                 return true;
             }
@@ -202,7 +144,6 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         return false;
     }
 
-    // DELETE
     @Override
     public boolean delete(BasicEvaluation evaluation) {
         return evaluation != null && deleteById(evaluation.getId());
@@ -211,15 +152,12 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
     @Override
     public boolean deleteById(int id) {
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(DELETE)) {
             stmt.setInt(1, id);
-
             int rowsAffected = stmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 connection.commit();
-                cache.remove(id);
+                removeFromCache(id);
                 logger.info("Évaluation basique {} supprimée avec succès", id);
                 return true;
             }
@@ -234,21 +172,17 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         return false;
     }
 
-    // MÉTHODES UTILITAIRES
     private BasicEvaluation mapResultSetToBasicEvaluation(ResultSet rs) throws SQLException {
         Integer id = rs.getInt("numero");
         String appreciation = rs.getString("appreciation");
         Date visitDate = rs.getDate("date_eval");
         String ipAddress = rs.getString("adresse_ip");
         int restaurantId = rs.getInt("fk_rest");
-
         Restaurant restaurant = RestaurantMapper.getInstance().findById(restaurantId);
         Boolean likeRestaurant = "T".equals(appreciation);
-
         return new BasicEvaluation(id, visitDate, restaurant, likeRestaurant, ipAddress);
     }
 
-    // MÉTHODES ABSTRAITES
     @Override
     protected String getSequenceQuery() {
         return SEQUENCE;
@@ -262,29 +196,5 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
     @Override
     protected String getCountQuery() {
         return COUNT;
-    }
-
-    // GESTION DU CACHE
-    @Override
-    protected boolean isCacheEmpty() {
-        return cache.isEmpty();
-    }
-
-    @Override
-    protected void resetCache() {
-        cache.clear();
-        logger.debug("Cache des évaluations basiques vidé");
-    }
-
-    @Override
-    protected void addToCache(BasicEvaluation evaluation) {
-        if (evaluation != null && evaluation.getId() != null) {
-            cache.put(evaluation.getId(), evaluation);
-        }
-    }
-
-    @Override
-    protected void removeFromCache(Integer id) {
-        cache.remove(id);
     }
 }

@@ -6,20 +6,11 @@ import java.sql.*;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * Data Mapper pour la classe EvaluationCriteria
- * Gère la persistance des critères d'évaluation dans la table CRITERES_EVALUATION
- */
 public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria> {
 
-    // CACHE
-    private static final java.util.Map<Integer, EvaluationCriteria> cache = new java.util.HashMap<>();
-
-    // SINGLETON
     private static EvaluationCriteriaMapper instance;
 
-    private EvaluationCriteriaMapper() {
-    }
+    private EvaluationCriteriaMapper() {}
 
     public static EvaluationCriteriaMapper getInstance() {
         if (instance == null) {
@@ -28,7 +19,6 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
         return instance;
     }
 
-    // REQUÊTES SQL
     private static final String FIND_BY_ID = "SELECT numero, nom, description FROM CRITERES_EVALUATION WHERE numero = ?";
     private static final String FIND_ALL = "SELECT numero, nom, description FROM CRITERES_EVALUATION ORDER BY nom";
     private static final String INSERT = "INSERT INTO CRITERES_EVALUATION (nom, description) VALUES (?, ?)";
@@ -38,31 +28,25 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
     private static final String COUNT = "SELECT COUNT(*) FROM CRITERES_EVALUATION";
     private static final String SEQUENCE = "SELECT SEQ_CRITERES_EVALUATION.CURRVAL FROM DUAL";
 
-    // CREATE (INSERT)
     @Override
     public EvaluationCriteria create(EvaluationCriteria criteria) {
         if (criteria == null) {
             logger.warn("Tentative de création d'un critère null");
             return null;
         }
-
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(INSERT)) {
             stmt.setString(1, criteria.getName());
-
             if (criteria.getDescription() != null) {
                 stmt.setString(2, criteria.getDescription());
             } else {
                 stmt.setNull(2, Types.VARCHAR);
             }
-
             int rowsAffected = stmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 criteria.setId(getSequenceValue());
                 connection.commit();
-                cache.put(criteria.getId(), criteria);
+                addToCache(criteria);
                 logger.info("Critère créé avec succès : {} (ID: {})", criteria.getName(), criteria.getId());
                 return criteria;
             }
@@ -77,24 +61,14 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
         return null;
     }
 
-    // READ (SELECT)
     @Override
-    public EvaluationCriteria findById(int id) {
-        if (cache.containsKey(id)) {
-            logger.debug("Critère {} trouvé dans le cache", id);
-            return cache.get(id);
-        }
-
+    protected EvaluationCriteria findByIdFromDb(int id) {
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(FIND_BY_ID)) {
             stmt.setInt(1, id);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    EvaluationCriteria criteria = mapResultSetToCriteria(rs);
-                    cache.put(id, criteria);
-                    return criteria;
+                    return mapResultSetToCriteria(rs);
                 }
             }
         } catch (SQLException ex) {
@@ -107,14 +81,12 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
     public Set<EvaluationCriteria> findAll() {
         Set<EvaluationCriteria> criterias = new HashSet<>();
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(FIND_ALL);
              ResultSet rs = stmt.executeQuery()) {
-
             while (rs.next()) {
                 EvaluationCriteria criteria = mapResultSetToCriteria(rs);
                 criterias.add(criteria);
-                cache.put(criteria.getId(), criteria);
+                addToCache(criteria);
             }
             logger.info("{} critères d'évaluation chargés", criterias.size());
         } catch (SQLException ex) {
@@ -123,32 +95,25 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
         return criterias;
     }
 
-    // UPDATE
     @Override
     public boolean update(EvaluationCriteria criteria) {
         if (criteria == null || criteria.getId() == null) {
             logger.warn("Tentative de mise à jour d'un critère null ou sans ID");
             return false;
         }
-
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(UPDATE)) {
             stmt.setString(1, criteria.getName());
-
             if (criteria.getDescription() != null) {
                 stmt.setString(2, criteria.getDescription());
             } else {
                 stmt.setNull(2, Types.VARCHAR);
             }
-
             stmt.setInt(3, criteria.getId());
-
             int rowsAffected = stmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 connection.commit();
-                cache.put(criteria.getId(), criteria);
+                addToCache(criteria);
                 logger.info("Critère {} mis à jour avec succès", criteria.getId());
                 return true;
             }
@@ -163,7 +128,6 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
         return false;
     }
 
-    // DELETE
     @Override
     public boolean delete(EvaluationCriteria criteria) {
         return criteria != null && deleteById(criteria.getId());
@@ -172,15 +136,12 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
     @Override
     public boolean deleteById(int id) {
         Connection connection = ConnectionUtils.getConnection();
-
         try (PreparedStatement stmt = connection.prepareStatement(DELETE)) {
             stmt.setInt(1, id);
-
             int rowsAffected = stmt.executeUpdate();
-
             if (rowsAffected > 0) {
                 connection.commit();
-                cache.remove(id);
+                removeFromCache(id);
                 logger.info("Critère {} supprimé avec succès", id);
                 return true;
             }
@@ -195,16 +156,13 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
         return false;
     }
 
-    // MÉTHODES UTILITAIRES
     private EvaluationCriteria mapResultSetToCriteria(ResultSet rs) throws SQLException {
         Integer id = rs.getInt("numero");
         String name = rs.getString("nom");
         String description = rs.getString("description");
-
         return new EvaluationCriteria(id, name, description);
     }
 
-    // MÉTHODES ABSTRAITES
     @Override
     protected String getSequenceQuery() {
         return SEQUENCE;
@@ -218,29 +176,5 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
     @Override
     protected String getCountQuery() {
         return COUNT;
-    }
-
-    // GESTION DU CACHE
-    @Override
-    protected boolean isCacheEmpty() {
-        return cache.isEmpty();
-    }
-
-    @Override
-    protected void resetCache() {
-        cache.clear();
-        logger.debug("Cache des critères vidé");
-    }
-
-    @Override
-    protected void addToCache(EvaluationCriteria criteria) {
-        if (criteria != null && criteria.getId() != null) {
-            cache.put(criteria.getId(), criteria);
-        }
-    }
-
-    @Override
-    protected void removeFromCache(Integer id) {
-        cache.remove(id);
     }
 }
