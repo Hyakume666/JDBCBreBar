@@ -16,19 +16,41 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
 
     protected static final Logger logger = LogManager.getLogger();
 
-    public abstract T findById(int id);
+    private final Map<Integer, T> identityMap = new HashMap<>();
+
+    public T findById(int id) {
+        if (identityMap.containsKey(id)) {
+            logger.debug("Objet {} trouvé dans le cache de {}", id, this.getClass().getSimpleName());
+            return identityMap.get(id);
+        }
+        T result = findByIdFromDb(id);
+        if (result != null) {
+            identityMap.put(id, result);
+        }
+        return result;
+    }
+
+    protected abstract T findByIdFromDb(int id);
+
     public abstract Set<T> findAll();
+
     public abstract T create(T object);
+
     public abstract boolean update(T object);
+
     public abstract boolean delete(T object);
+
     public abstract boolean deleteById(int id);
 
     protected abstract String getSequenceQuery();
+
     protected abstract String getExistsQuery();
+
     protected abstract String getCountQuery();
 
     /**
      * Vérifie si un objet avec l'ID donné existe.
+     *
      * @param id the ID to check
      * @return true si l'objet existe, false sinon
      */
@@ -49,6 +71,7 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
 
     /**
      * Compte le nombre d'objets en base de données.
+     *
      * @return
      */
     public int count() {
@@ -69,6 +92,7 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
 
     /**
      * Obtient la valeur de la séquence actuelle en base de données
+     *
      * @return Le nombre de villes
      * @En cas d'erreur SQL
      */
@@ -93,16 +117,15 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
      * @return true si le cache ne contient aucun objet, false sinon
      */
     protected boolean isCacheEmpty() {
-        // TODO à implémenter par vos soins
-        throw new UnsupportedOperationException("Vous devez implémenter votre cache vous-même !");
+        return identityMap.isEmpty();
     }
 
     /**
      * Vide le cache
      */
     protected void resetCache() {
-        // TODO à implémenter par vos soins
-        throw new UnsupportedOperationException("Vous devez implémenter votre cache vous-même !");
+        identityMap.clear();
+        logger.debug("Cache de {} vidé", this.getClass().getSimpleName());
     }
 
     /**
@@ -110,8 +133,9 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
      * @param objet l'objet à ajouter
      */
     protected void addToCache(T objet) {
-        // TODO à implémenter par vos soins
-        throw new UnsupportedOperationException("Vous devez implémenter votre cache vous-même !");
+        if (objet != null && objet.getId() != null) {
+            identityMap.put(objet.getId(), objet);
+        }
     }
 
     /**
@@ -119,7 +143,8 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
      * @param id l'ID de l'objet à retirer du cache
      */
     protected void removeFromCache(Integer id) {
-        // TODO à implémenter par vos soins
-        throw new UnsupportedOperationException("Vous devez implémenter votre cache vous-même !");
+        if (id != null) {
+            identityMap.remove(id);
+        }
     }
 }
