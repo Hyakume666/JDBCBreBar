@@ -2,6 +2,7 @@ package ch.hearc.ig.guideresto.presentation;
 
 import ch.hearc.ig.guideresto.business.*;
 import ch.hearc.ig.guideresto.persistence.*;
+import ch.hearc.ig.guideresto.service.RestaurantService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,12 +13,13 @@ import java.util.*;
 /**
  * @author cedric.baudet
  * @author alain.matile
- * VERSION JDBC - Utilise les Data Mappers au lieu de FakeItems
+ * VERSION SERVICE LAYER - Utilise RestaurantService au lieu des Mappers
  */
 public class Application {
 
     private static Scanner scanner;
     private static final Logger logger = LogManager.getLogger(Application.class);
+    private static final RestaurantService restaurantService = RestaurantService.getInstance();
 
     public static void main(String[] args) {
         scanner = new Scanner(System.in);
@@ -81,8 +83,7 @@ public class Application {
     }
 
     /**
-     * On affiche à l'utilisateur une liste de restaurants numérotés, et il doit en sélectionner un !
-     *
+     * On affiche à l'utilisateur une liste de restaurants numérotés, et il doit en sélectionner un
      * @param restaurants Liste à afficher
      * @return L'instance du restaurant choisi par l'utilisateur
      */
@@ -112,8 +113,7 @@ public class Application {
     private static void showRestaurantsList() {
         System.out.println("Liste des restaurants : ");
 
-        // CHANGEMENT: Utilise PersistenceHelper au lieu de FakeItems
-        Restaurant restaurant = pickRestaurant(PersistenceHelper.loadAllRestaurantsWithEvaluations());
+        Restaurant restaurant = pickRestaurant(restaurantService.getAllRestaurantsWithEvaluations());
 
         if (restaurant != null) {
             showRestaurant(restaurant);
@@ -127,8 +127,7 @@ public class Application {
         System.out.println("Veuillez entrer une partie du nom recherché : ");
         String research = readString();
 
-        // CHANGEMENT: Utilise PersistenceHelper au lieu de FakeItems
-        Set<Restaurant> filteredList = PersistenceHelper.searchRestaurantsByName(research);
+        Set<Restaurant> filteredList = restaurantService.searchRestaurantsByName(research);
 
         Restaurant restaurant = pickRestaurant(filteredList);
 
@@ -143,9 +142,7 @@ public class Application {
     private static void searchRestaurantByCity() {
         System.out.println("Veuillez entrer une partie du nom de la ville désirée : ");
         String research = readString();
-
-        // CHANGEMENT: Utilise PersistenceHelper au lieu de FakeItems
-        Set<Restaurant> filteredList = PersistenceHelper.searchRestaurantsByCity(research);
+        Set<Restaurant> filteredList = restaurantService.searchRestaurantsByCity(research);
 
         Restaurant restaurant = pickRestaurant(filteredList);
 
@@ -156,7 +153,6 @@ public class Application {
 
     /**
      * L'utilisateur choisit une ville parmi celles présentes dans le système.
-     *
      * @param cities La liste des villes à présenter à l'utilisateur
      * @return La ville sélectionnée, ou null si aucune ville n'a été choisie.
      */
@@ -176,8 +172,7 @@ public class Application {
             System.out.println("Veuillez entrer le nom de la nouvelle ville : ");
             city.setCityName(readString());
 
-            // CHANGEMENT: Persiste la ville dans la base
-            city = CityMapper.getInstance().create(city);
+            city = restaurantService.createCity(city);
 
             return city;
         }
@@ -187,7 +182,6 @@ public class Application {
 
     /**
      * L'utilisateur choisit un type de restaurant parmi ceux présents dans le système.
-     *
      * @param types La liste des types de restaurant à présenter à l'utilisateur
      * @return Le type sélectionné, ou null si aucun type n'a été choisi.
      */
@@ -206,12 +200,10 @@ public class Application {
      * Si l'utilisateur sélectionne un restaurant, ce dernier lui sera affiché.
      */
     private static void searchRestaurantByType() {
-        // CHANGEMENT: Charge les types depuis la base
-        RestaurantType chosenType = pickRestaurantType(PersistenceHelper.loadAllRestaurantTypes());
+        RestaurantType chosenType = pickRestaurantType(restaurantService.getAllRestaurantTypes());
 
         if (chosenType != null) {
-            // CHANGEMENT: Utilise PersistenceHelper
-            Set<Restaurant> filteredList = PersistenceHelper.searchRestaurantsByType(chosenType);
+            Set<Restaurant> filteredList = restaurantService.searchRestaurantsByType(chosenType);
             Restaurant restaurant = pickRestaurant(filteredList);
 
             if (restaurant != null) {
@@ -236,22 +228,18 @@ public class Application {
 
         City city = null;
         do {
-            // CHANGEMENT: Charge les villes depuis la base
-            city = pickCity(PersistenceHelper.loadAllCities());
+            city = pickCity(restaurantService.getAllCities());
         } while (city == null);
 
         RestaurantType restaurantType = null;
         do {
-            // CHANGEMENT: Charge les types depuis la base
-            restaurantType = pickRestaurantType(PersistenceHelper.loadAllRestaurantTypes());
+            restaurantType = pickRestaurantType(restaurantService.getAllRestaurantTypes());
         } while (restaurantType == null);
 
-        // CHANGEMENT: Crée le restaurant avec une Localisation
         Localisation localisation = new Localisation(street, city);
         Restaurant restaurant = new Restaurant(null, name, description, website, localisation, restaurantType);
 
-        // CHANGEMENT: Persiste le restaurant dans la base
-        restaurant = RestaurantMapper.getInstance().create(restaurant);
+        restaurant = restaurantService.createRestaurant(restaurant);
 
         if (restaurant != null) {
             System.out.println("Restaurant créé avec succès !");
@@ -263,7 +251,6 @@ public class Application {
 
     /**
      * Affiche toutes les informations du restaurant passé en paramètre, puis affiche le menu des actions disponibles sur ledit restaurant
-     *
      * @param restaurant Le restaurant à afficher
      */
     private static void showRestaurant(Restaurant restaurant) {
@@ -299,7 +286,6 @@ public class Application {
 
     /**
      * Parcourt la liste et compte le nombre d'évaluations basiques positives ou négatives en fonction du paramètre likeRestaurant
-     *
      * @param evaluations    La liste des évaluations à parcourir
      * @param likeRestaurant Veut-on le nombre d'évaluations positives ou négatives ?
      * @return Le nombre d'évaluations positives ou négatives trouvées
@@ -316,7 +302,6 @@ public class Application {
 
     /**
      * Retourne un String qui contient le détail complet d'une évaluation si elle est de type "CompleteEvaluation". Retourne null s'il s'agit d'une BasicEvaluation
-     *
      * @param eval L'évaluation à afficher
      * @return Un String qui contient le détail complet d'une CompleteEvaluation, ou null s'il s'agit d'une BasicEvaluation
      */
@@ -352,7 +337,6 @@ public class Application {
 
     /**
      * Traite le choix saisi par l'utilisateur
-     *
      * @param choice     Un numéro d'action, entre 0 et 6.
      * @param restaurant L'instance du restaurant sur lequel l'action doit être réalisée
      */
@@ -395,9 +379,8 @@ public class Application {
             ipAddress = "Indisponible";
         }
 
-        // CHANGEMENT: Crée et persiste l'évaluation
-        BasicEvaluation eval = new BasicEvaluation(null, new Date(), restaurant, like, ipAddress);
-        eval = BasicEvaluationMapper.getInstance().create(eval);
+        // CHANGEMENT: Utilise RestaurantService au lieu de BasicEvaluationMapper
+        BasicEvaluation eval = restaurantService.addBasicEvaluation(restaurant, like, ipAddress);
 
         if (eval != null) {
             restaurant.getEvaluations().add(eval);
@@ -417,23 +400,19 @@ public class Application {
         System.out.println("Quel commentaire aimeriez-vous publier ?");
         String comment = readString();
 
-        CompleteEvaluation eval = new CompleteEvaluation(null, new Date(), restaurant, comment, username);
+        Set<EvaluationCriteria> criterias = restaurantService.getAllEvaluationCriterias();
 
-        // L'utilisateur va saisir une note pour chaque critère existant
+        Map<EvaluationCriteria, Integer> grades = new HashMap<>();
+
         System.out.println("Veuillez svp donner une note entre 1 et 5 pour chacun de ces critères : ");
-
-        // CHANGEMENT: Charge les critères depuis la base
-        Set<EvaluationCriteria> criterias = PersistenceHelper.loadAllEvaluationCriterias();
 
         for (EvaluationCriteria currentCriteria : criterias) {
             System.out.println(currentCriteria.getName() + " : " + currentCriteria.getDescription());
             Integer note = readInt();
-            Grade grade = new Grade(null, note, eval, currentCriteria);
-            eval.getGrades().add(grade);
+            grades.put(currentCriteria, note);
         }
 
-        // CHANGEMENT: Persiste l'évaluation complète (qui persistera aussi les grades)
-        eval = CompleteEvaluationMapper.getInstance().create(eval);
+        CompleteEvaluation eval = restaurantService.addCompleteEvaluation(restaurant, username, comment, grades);
 
         if (eval != null) {
             restaurant.getEvaluations().add(eval);
@@ -457,13 +436,12 @@ public class Application {
         restaurant.setWebsite(readString());
         System.out.println("Nouveau type de restaurant : ");
 
-        // CHANGEMENT: Charge les types depuis la base
-        RestaurantType newType = pickRestaurantType(PersistenceHelper.loadAllRestaurantTypes());
+        RestaurantType newType = pickRestaurantType(restaurantService.getAllRestaurantTypes());
         if (newType != null) {
             restaurant.setType(newType);
         }
 
-        boolean success = RestaurantMapper.getInstance().update(restaurant);
+        boolean success = restaurantService.updateRestaurant(restaurant);
 
         if (success) {
             System.out.println("Merci, le restaurant a bien été modifié !");
@@ -481,12 +459,12 @@ public class Application {
         System.out.println("Nouvelle rue : ");
         restaurant.getAddress().setStreet(readString());
 
-        City newCity = pickCity(PersistenceHelper.loadAllCities());
+        City newCity = pickCity(restaurantService.getAllCities());
         if (newCity != null) {
             restaurant.getAddress().setCity(newCity);
         }
 
-        boolean success = RestaurantMapper.getInstance().update(restaurant);
+        boolean success = restaurantService.updateRestaurant(restaurant);
 
         if (success) {
             System.out.println("L'adresse a bien été modifiée ! Merci !");
@@ -502,8 +480,7 @@ public class Application {
         System.out.println("Etes-vous sûr de vouloir supprimer ce restaurant ? (O/n)");
         String choice = readString();
         if (choice.equals("o") || choice.equals("O")) {
-            // CHANGEMENT: Utilise PersistenceHelper pour supprimer complètement
-            boolean success = PersistenceHelper.deleteRestaurantCompletely(restaurant);
+            boolean success = restaurantService.deleteRestaurant(restaurant);
 
             if (success) {
                 System.out.println("Le restaurant a bien été supprimé !");
