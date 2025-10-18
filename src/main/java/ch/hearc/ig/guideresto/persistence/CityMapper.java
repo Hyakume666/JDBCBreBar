@@ -50,7 +50,7 @@ public class CityMapper extends AbstractMapper<City> {
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la création de la ville: {}", ex.getMessage());
         }
@@ -113,7 +113,7 @@ public class CityMapper extends AbstractMapper<City> {
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la mise à jour de la ville: {}", ex.getMessage());
         }
@@ -141,7 +141,7 @@ public class CityMapper extends AbstractMapper<City> {
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la suppression de la ville: {}", ex.getMessage());
         }

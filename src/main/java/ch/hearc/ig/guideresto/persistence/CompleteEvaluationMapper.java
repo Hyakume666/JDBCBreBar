@@ -39,33 +39,22 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
         }
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(INSERT)) {
-            stmt.setDate(1, new java.sql.Date(evaluation.getVisitDate().getTime()));
-            if (evaluation.getComment() != null) {
-                stmt.setString(2, evaluation.getComment());
-            } else {
-                stmt.setNull(2, Types.CLOB);
-            }
-            stmt.setString(3, evaluation.getUsername());
-            stmt.setInt(4, evaluation.getRestaurant().getId());
+            setEvaluationParameters(stmt, evaluation);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 evaluation.setId(getSequenceValue());
                 connection.commit();
-                if (evaluation.getGrades() != null && !evaluation.getGrades().isEmpty()) {
-                    for (Grade grade : evaluation.getGrades()) {
-                        grade.setEvaluation(evaluation);
-                        GradeMapper.getInstance().create(grade);
-                    }
-                }
+                createGrades(evaluation);
                 addToCache(evaluation);
                 logger.info("Évaluation complète créée avec succès (ID: {})", evaluation.getId());
                 return evaluation;
             }
+
         } catch (SQLException ex) {
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la création de l'évaluation complète: {}", ex.getMessage());
         }
@@ -134,25 +123,13 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
         }
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(UPDATE)) {
-            stmt.setDate(1, new java.sql.Date(evaluation.getVisitDate().getTime()));
-            if (evaluation.getComment() != null) {
-                stmt.setString(2, evaluation.getComment());
-            } else {
-                stmt.setNull(2, Types.CLOB);
-            }
-            stmt.setString(3, evaluation.getUsername());
-            stmt.setInt(4, evaluation.getRestaurant().getId());
+            setEvaluationParameters(stmt, evaluation);
             stmt.setInt(5, evaluation.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 connection.commit();
                 GradeMapper.getInstance().deleteByEvaluationId(evaluation.getId());
-                if (evaluation.getGrades() != null && !evaluation.getGrades().isEmpty()) {
-                    for (Grade grade : evaluation.getGrades()) {
-                        grade.setEvaluation(evaluation);
-                        GradeMapper.getInstance().create(grade);
-                    }
-                }
+                createGrades(evaluation);
                 addToCache(evaluation);
                 logger.info("Évaluation complète {} mise à jour avec succès", evaluation.getId());
                 return true;
@@ -161,7 +138,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la mise à jour de l'évaluation complète: {}", ex.getMessage());
         }
@@ -192,7 +169,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la suppression de l'évaluation complète: {}", ex.getMessage());
         }
@@ -200,11 +177,11 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
     }
 
     private CompleteEvaluation mapResultSetToCompleteEvaluation(ResultSet rs) throws SQLException {
-        Integer id = rs.getInt("numero");
+        int id = rs.getInt("numero");
         Date visitDate = rs.getDate("date_eval");
         String comment = rs.getString("commentaire");
         String username = rs.getString("nom_utilisateur");
-        Integer restaurantId = rs.getInt("fk_rest");
+        int restaurantId = rs.getInt("fk_rest");
         Restaurant restaurant = RestaurantMapper.getInstance().findById(restaurantId);
         CompleteEvaluation evaluation = new CompleteEvaluation(id, visitDate, restaurant, comment, username);
         Set<Grade> grades = GradeMapper.getInstance().findByEvaluationId(id);
@@ -213,6 +190,34 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
         }
         evaluation.setGrades(grades);
         return evaluation;
+    }
+    /**
+     * Crée et persiste les notes (grades) d'une évaluation complète.
+     * @param evaluation L'évaluation contenant les notes à persister
+     */
+    private void createGrades(CompleteEvaluation evaluation) {
+        if (evaluation.getGrades() != null && !evaluation.getGrades().isEmpty()) {
+            for (Grade grade : evaluation.getGrades()) {
+                grade.setEvaluation(evaluation);
+                GradeMapper.getInstance().create(grade);
+            }
+        }
+    }
+    /**
+     * Configure les paramètres d'un PreparedStatement pour une évaluation complète.
+     * @param stmt Le PreparedStatement à configurer
+     * @param evaluation L'évaluation contenant les données
+     * @throws SQLException en cas d'erreur SQL
+     */
+    private void setEvaluationParameters(PreparedStatement stmt, CompleteEvaluation evaluation) throws SQLException {
+        stmt.setDate(1, new java.sql.Date(evaluation.getVisitDate().getTime()));
+        if (evaluation.getComment() != null) {
+            stmt.setString(2, evaluation.getComment());
+        } else {
+            stmt.setNull(2, Types.CLOB);
+        }
+        stmt.setString(3, evaluation.getUsername());
+        stmt.setInt(4, evaluation.getRestaurant().getId());
     }
 
     @Override
