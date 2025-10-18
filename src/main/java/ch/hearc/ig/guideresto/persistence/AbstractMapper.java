@@ -55,6 +55,7 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
     protected abstract String getExistsQuery();
     protected abstract String getCountQuery();
 
+    @SuppressWarnings({"unused","SqlSourceToSinkFlow"})
     public boolean exists(int id) {
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(getExistsQuery())) {
@@ -63,11 +64,12 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
                 return rs.next();
             }
         } catch (SQLException ex) {
-            logger.error("SQLException: {}", ex.getMessage());
+            logger.error("Erreur lors de la vérification de l'existence pour l'ID {}", id, ex);
         }
         return false;
     }
 
+    @SuppressWarnings({"unused","SqlSourceToSinkFlow"})
     public int count() {
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(getCountQuery());
@@ -77,11 +79,12 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
             }
             return 0;
         } catch (SQLException ex) {
-            logger.error("SQLException: {}", ex.getMessage());
+            logger.error("Erreur lors du comptage des objets", ex);
             return 0;
         }
     }
 
+    @SuppressWarnings("SqlSourceToSinkFlow")
     protected Integer getSequenceValue() {
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(getSequenceQuery());
@@ -91,15 +94,17 @@ public abstract class AbstractMapper<T extends IBusinessObject> {
             }
             return 0;
         } catch (SQLException ex) {
-            logger.error("SQLException: {}", ex.getMessage());
+            logger.error("Erreur lors de la récupération de la valeur de la séquence", ex);
             return 0;
         }
     }
 
+    @SuppressWarnings("unused")
     protected boolean isCacheEmpty() {
         return identityMap.isEmpty();
     }
 
+    @SuppressWarnings("unused")
     protected void resetCache() {
         identityMap.clear();
         logger.debug("Cache de {} vidé", this.getClass().getSimpleName());
