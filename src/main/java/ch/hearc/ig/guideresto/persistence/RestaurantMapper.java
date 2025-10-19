@@ -44,13 +44,13 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 restaurant.setId(getSequenceValue());
-                connection.commit();
                 addToCache(restaurant);
                 logger.info("Restaurant créé avec succès : {} (ID: {})", restaurant.getName(), restaurant.getId());
                 return restaurant;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            logger.error("Erreur lors de la création du restaurant: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -67,6 +67,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche du restaurant {}: {}", id, ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -85,6 +86,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             logger.info("{} restaurants chargés", restaurants.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des restaurants: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return restaurants;
     }
@@ -101,14 +103,13 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             stmt.setInt(7, restaurant.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 addToCache(restaurant);
                 logger.info("Restaurant {} mis à jour avec succès", restaurant.getId());
                 return true;
             }
         } catch (SQLException ex) {
-        rollbackAndLog(connection, ex);
-    }
+            throw new RuntimeException(ex);
+        }
 
         return false;
     }
@@ -125,13 +126,12 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             stmt.setInt(1, id);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 removeFromCache(id);
                 logger.info("Restaurant {} supprimé avec succès", id);
                 return true;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -158,6 +158,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche par nom: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return restaurants;
     }
@@ -195,6 +196,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche par type: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return restaurants;
     }
@@ -257,15 +259,5 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
         stmt.setInt(5, restaurant.getType().getId());
         stmt.setInt(6, restaurant.getAddress().getCity().getId());
     }
-    /**
-     * Effectue un rollback et log l'erreur
-     */
-    private void rollbackAndLog(Connection connection, SQLException ex) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            logger.error("Erreur lors du rollback: {}", e.getMessage());
-        }
-        logger.error("Erreur SQL: {}", ex.getMessage());
-    }
+
 }

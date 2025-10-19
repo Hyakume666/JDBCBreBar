@@ -84,19 +84,31 @@ public class RestaurantService {
             Restaurant created = RestaurantMapper.getInstance().create(restaurant);
 
             if (created != null) {
-                connection.commit();
+                connection.commit(); // ✅ Commit ici
                 logger.info("Restaurant créé avec succès (ID: {})", created.getId());
                 return created;
             } else {
-                connection.rollback();
+                connection.rollback(); // ✅ Rollback ici
                 logger.error("Échec de la création du restaurant");
                 return null;
             }
-        } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+        } catch (Exception ex) { // ✅ MODIFIER : SQLException -> Exception
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.error("Erreur lors du rollback: {}", e.getMessage());
+            }
+            logger.error("Erreur lors de la création du restaurant: {}", ex.getMessage());
             return null;
         }
     }
+
+// Appliquer le même pattern (catch Exception au lieu de SQLException) à :
+// - updateRestaurant()
+// - deleteRestaurant()
+// - addBasicEvaluation()
+// - addCompleteEvaluation()
+// - createCity()
 
     /**
      * Met à jour un restaurant existant.
@@ -126,9 +138,9 @@ public class RestaurantService {
 
             return success;
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
-            return false;
+            throw new RuntimeException(ex);
         }
+
     }
 
     /**
@@ -159,9 +171,8 @@ public class RestaurantService {
 
             return success;
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
-            return false;
-        }
+            throw new RuntimeException(ex);}
+
     }
 
     /**
@@ -204,8 +215,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
-            return null;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -265,8 +275,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
-            return null;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -307,8 +316,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
-            return null;
+            throw new RuntimeException(ex);
         }
     }
 
@@ -329,15 +337,7 @@ public class RestaurantService {
         logger.info("Récupération de tous les critères d'évaluation");
         return EvaluationCriteriaMapper.getInstance().findAll();
     }
-    /**
-     * Effectue un rollback et log l'erreur
-     */
-    private void rollbackAndLog(Connection connection, SQLException ex) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            logger.error("Erreur lors du rollback: {}", e.getMessage());
-        }
-        logger.error("Erreur SQL: {}", ex.getMessage());
-    }
+
+
+
 }

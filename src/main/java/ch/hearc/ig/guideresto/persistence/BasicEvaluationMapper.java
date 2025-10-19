@@ -45,18 +45,13 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 evaluation.setId(getSequenceValue());
-                connection.commit();
                 addToCache(evaluation);
                 logger.info("Évaluation basique créée avec succès (ID: {})", evaluation.getId());
                 return evaluation;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la création de l'évaluation basique: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -73,6 +68,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche de l'évaluation basique {}: {}", id, ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -128,18 +124,13 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             stmt.setInt(5, evaluation.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 addToCache(evaluation);
                 logger.info("Évaluation basique {} mise à jour avec succès", evaluation.getId());
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la mise à jour de l'évaluation basique: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -156,18 +147,13 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             stmt.setInt(1, id);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 removeFromCache(id);
                 logger.info("Évaluation basique {} supprimée avec succès", id);
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la suppression de l'évaluation basique: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }

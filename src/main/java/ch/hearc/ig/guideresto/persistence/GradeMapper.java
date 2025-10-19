@@ -51,7 +51,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return grade;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -128,7 +128,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return true;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -145,13 +145,12 @@ public class GradeMapper extends AbstractMapper<Grade> {
             stmt.setInt(1, id);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 removeFromCache(id);
                 logger.info("Note {} supprimée avec succès", id);
                 return true;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -163,7 +162,6 @@ public class GradeMapper extends AbstractMapper<Grade> {
         try (PreparedStatement stmt = connection.prepareStatement(DELETE_BY_EVALUATION)) {
             stmt.setInt(1, evaluationId);
             int rowsAffected = stmt.executeUpdate();
-            connection.commit();
             for (Grade grade : gradesToDelete) {
                 removeFromCache(grade.getId());
             }
@@ -171,9 +169,8 @@ public class GradeMapper extends AbstractMapper<Grade> {
             return true;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
-        return false;
     }
 
 
@@ -185,20 +182,6 @@ public class GradeMapper extends AbstractMapper<Grade> {
         return new Grade(id, gradeValue, null, criteria);
     }
 
-    /**
-     * Effectue un rollback et log l'erreur SQL.
-     * Méthode utilitaire pour éviter la duplication de code.
-     * @param connection La connexion à rollback
-     * @param ex L'exception SQL à logger
-     */
-    private void rollbackAndLog(Connection connection, SQLException ex) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            logger.error("Erreur lors du rollback: {}", e.getMessage());
-        }
-        logger.error("Erreur SQL: {}", ex.getMessage());
-    }
 
 
     @Override

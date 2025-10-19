@@ -45,13 +45,12 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 type.setId(getSequenceValue());
-                connection.commit();
                 addToCache(type);
                 logger.info("Type créé avec succès : {} (ID: {})", type.getLabel(), type.getId());
                 return type;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -107,13 +106,12 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
             stmt.setInt(3, type.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 addToCache(type);
                 logger.info("Type {} mis à jour avec succès", type.getId());
                 return true;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -130,13 +128,12 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
             stmt.setInt(1, id);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 removeFromCache(id);
                 logger.info("Type {} supprimé avec succès", id);
                 return true;
             }
         } catch (SQLException ex) {
-            rollbackAndLog(connection, ex);
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -162,15 +159,5 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
     protected String getCountQuery() {
         return COUNT;
     }
-    /**
-     * Effectue un rollback et log l'erreur
-     */
-    private void rollbackAndLog(Connection connection, SQLException ex) {
-        try {
-            connection.rollback();
-        } catch (SQLException e) {
-            logger.error("Erreur lors du rollback: {}", e.getMessage());
-        }
-        logger.error("Erreur SQL: {}", ex.getMessage());
-    }
+
 }

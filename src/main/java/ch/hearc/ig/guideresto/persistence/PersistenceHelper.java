@@ -104,6 +104,7 @@ public class PersistenceHelper {
         if (restaurant == null || restaurant.getId() == null) {
             return false;
         }
+
         Set<CompleteEvaluation> completeEvaluations =
                 CompleteEvaluationMapper.getInstance().findByRestaurantId(restaurant.getId());
 

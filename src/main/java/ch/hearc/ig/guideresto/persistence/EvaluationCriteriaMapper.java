@@ -45,18 +45,13 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 criteria.setId(getSequenceValue());
-                connection.commit();
                 addToCache(criteria);
                 logger.info("Critère créé avec succès : {} (ID: {})", criteria.getName(), criteria.getId());
                 return criteria;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la création du critère: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -112,18 +107,13 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             stmt.setInt(3, criteria.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 addToCache(criteria);
                 logger.info("Critère {} mis à jour avec succès", criteria.getId());
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la mise à jour du critère: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -140,18 +130,13 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             stmt.setInt(1, id);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 removeFromCache(id);
                 logger.info("Critère {} supprimé avec succès", id);
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la suppression du critère: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }

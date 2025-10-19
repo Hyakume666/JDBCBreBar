@@ -47,12 +47,8 @@ public class CityMapper extends AbstractMapper<City> {
                 return city;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la création de la ville: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -104,18 +100,13 @@ public class CityMapper extends AbstractMapper<City> {
             stmt.setInt(3, city.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 addToCache(city);
                 logger.info("Ville {} mise à jour avec succès", city.getId());
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la mise à jour de la ville: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -132,18 +123,13 @@ public class CityMapper extends AbstractMapper<City> {
             stmt.setInt(1, id);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 removeFromCache(id);
                 logger.info("Ville {} supprimée avec succès", id);
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la suppression de la ville: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }

@@ -43,7 +43,6 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 evaluation.setId(getSequenceValue());
-                connection.commit();
                 createGrades(evaluation);
                 addToCache(evaluation);
                 logger.info("Évaluation complète créée avec succès (ID: {})", evaluation.getId());
@@ -51,12 +50,8 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             }
 
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la création de l'évaluation complète: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return null;
     }
@@ -91,6 +86,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             logger.info("{} évaluations complètes chargées", evaluations.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des évaluations complètes: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return evaluations;
     }
@@ -111,6 +107,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche des évaluations pour le restaurant {}: {}", restaurantId, ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return evaluations;
     }
@@ -127,7 +124,6 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             stmt.setInt(5, evaluation.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
 
                 boolean gradesDeleted = GradeMapper.getInstance().deleteByEvaluationId(evaluation.getId());
                 if (!gradesDeleted) {
@@ -140,12 +136,8 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la mise à jour de l'évaluation complète: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }
@@ -164,19 +156,14 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
                 stmt.setInt(1, id);
                 int rowsAffected = stmt.executeUpdate();
                 if (rowsAffected > 0) {
-                    connection.commit();
                     removeFromCache(id);
                     logger.info("Évaluation complète {} supprimée avec succès", id);
                     return true;
                 }
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
-            }
             logger.error("Erreur lors de la suppression de l'évaluation complète: {}", ex.getMessage());
+            throw new RuntimeException(ex);
         }
         return false;
     }
