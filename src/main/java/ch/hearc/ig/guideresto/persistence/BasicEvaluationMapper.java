@@ -117,7 +117,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
         }
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(UPDATE)) {
-            stmt.setString(1, evaluation.getLikeRestaurant() ? "1" : "0");
+            stmt.setString(1, evaluation.getLikeRestaurant() ? "T" : "F");
             stmt.setDate(2, new java.sql.Date(evaluation.getVisitDate().getTime()));
             stmt.setString(3, evaluation.getIpAddress());
             stmt.setInt(4, evaluation.getRestaurant().getId());
