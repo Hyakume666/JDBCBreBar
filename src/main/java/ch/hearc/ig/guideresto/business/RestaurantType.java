@@ -13,6 +13,7 @@ public class RestaurantType implements IBusinessObject {
     private String description;
     private Set<Restaurant> restaurants;
 
+    @SuppressWarnings("unused")
     public RestaurantType() {
         this(null, null);
     }
@@ -22,7 +23,7 @@ public class RestaurantType implements IBusinessObject {
     }
 
     public RestaurantType(Integer id, String label, String description) {
-        this.restaurants = new HashSet();
+        this.restaurants = new HashSet<>();
         this.id = id;
         this.label = label;
         this.description = description;
@@ -45,6 +46,7 @@ public class RestaurantType implements IBusinessObject {
         return label;
     }
 
+    @SuppressWarnings("unused")
     public void setLabel(String label) {
         this.label = label;
     }
@@ -53,6 +55,7 @@ public class RestaurantType implements IBusinessObject {
         return description;
     }
 
+    @SuppressWarnings("unused")
     public void setDescription(String description) {
         this.description = description;
     }

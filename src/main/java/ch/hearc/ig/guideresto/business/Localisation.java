@@ -8,6 +8,7 @@ public class Localisation {
     private String street;
     private City city;
 
+    @SuppressWarnings("unused")
     public Localisation() {
         this(null, null);
     }

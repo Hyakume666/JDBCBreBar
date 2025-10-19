@@ -10,6 +10,7 @@ public class BasicEvaluation extends Evaluation {
     private Boolean likeRestaurant;
     private String ipAddress;
 
+    @SuppressWarnings("unused")
     public BasicEvaluation() {
         this(null, null, null, null);
     }
@@ -28,6 +29,7 @@ public class BasicEvaluation extends Evaluation {
         return likeRestaurant;
     }
 
+    @SuppressWarnings("unused")
     public void setLikeRestaurant(Boolean likeRestaurant) {
         this.likeRestaurant = likeRestaurant;
     }
@@ -36,6 +38,7 @@ public class BasicEvaluation extends Evaluation {
         return ipAddress;
     }
 
+    @SuppressWarnings("unused")
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }

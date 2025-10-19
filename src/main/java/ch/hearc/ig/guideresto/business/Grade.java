@@ -10,6 +10,7 @@ public class Grade implements IBusinessObject {
     private CompleteEvaluation evaluation;
     private EvaluationCriteria criteria;
 
+    @SuppressWarnings("unused")
     public Grade() {
         this(null, null, null);
     }
@@ -37,6 +38,7 @@ public class Grade implements IBusinessObject {
         return grade;
     }
 
+    @SuppressWarnings("unused")
     public void setGrade(Integer grade) {
         this.grade = grade;
     }
@@ -53,6 +55,7 @@ public class Grade implements IBusinessObject {
         return criteria;
     }
 
+    @SuppressWarnings("unused")
     public void setCriteria(EvaluationCriteria criteria) {
         this.criteria = criteria;
     }

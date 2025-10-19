@@ -51,12 +51,7 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
                 return type;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la création du type: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return null;
     }
@@ -118,12 +113,7 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la mise à jour du type: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return false;
     }
@@ -146,12 +136,7 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la suppression du type: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return false;
     }
@@ -176,5 +161,16 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
     @Override
     protected String getCountQuery() {
         return COUNT;
+    }
+    /**
+     * Effectue un rollback et log l'erreur
+     */
+    private void rollbackAndLog(Connection connection, SQLException ex) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            logger.error("Erreur lors du rollback: {}", e.getMessage());
+        }
+        logger.error("Erreur SQL: {}", ex.getMessage());
     }
 }

@@ -40,20 +40,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
         }
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(INSERT)) {
-            stmt.setString(1, restaurant.getName());
-            stmt.setString(2, restaurant.getAddress().getStreet());
-            if (restaurant.getDescription() != null) {
-                stmt.setString(3, restaurant.getDescription());
-            } else {
-                stmt.setNull(3, Types.CLOB);
-            }
-            if (restaurant.getWebsite() != null) {
-                stmt.setString(4, restaurant.getWebsite());
-            } else {
-                stmt.setNull(4, Types.VARCHAR);
-            }
-            stmt.setInt(5, restaurant.getType().getId());
-            stmt.setInt(6, restaurant.getAddress().getCity().getId());
+            setRestaurantParameters(stmt, restaurant);
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 restaurant.setId(getSequenceValue());
@@ -63,12 +50,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
                 return restaurant;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la création du restaurant: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return null;
     }
@@ -115,20 +97,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
         }
         Connection connection = ConnectionUtils.getConnection();
         try (PreparedStatement stmt = connection.prepareStatement(UPDATE)) {
-            stmt.setString(1, restaurant.getName());
-            stmt.setString(2, restaurant.getAddress().getStreet());
-            if (restaurant.getDescription() != null) {
-                stmt.setString(3, restaurant.getDescription());
-            } else {
-                stmt.setNull(3, Types.CLOB);
-            }
-            if (restaurant.getWebsite() != null) {
-                stmt.setString(4, restaurant.getWebsite());
-            } else {
-                stmt.setNull(4, Types.VARCHAR);
-            }
-            stmt.setInt(5, restaurant.getType().getId());
-            stmt.setInt(6, restaurant.getAddress().getCity().getId());
+            setRestaurantParameters(stmt, restaurant);
             stmt.setInt(7, restaurant.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
@@ -138,13 +107,9 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la mise à jour du restaurant: {}", ex.getMessage());
-        }
+        rollbackAndLog(connection, ex);
+    }
+
         return false;
     }
 
@@ -166,12 +131,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la suppression du restaurant: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return false;
     }
@@ -202,41 +162,6 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
         return restaurants;
     }
 
-    /**
-     * Recherche les restaurants par ville
-     */
-    public Set<Restaurant> findByCity(City city) {
-        if (city == null || city.getId() == null) {
-            return new HashSet<>();
-        }
-        return findByCityId(city.getId());
-    }
-
-    /**
-     * Recherche les restaurants par ID de ville
-     */
-    public Set<Restaurant> findByCityId(int cityId) {
-        Set<Restaurant> restaurants = new HashSet<>();
-        Connection connection = ConnectionUtils.getConnection();
-
-        String query = "SELECT r.numero, r.nom, r.adresse, r.description, r.site_web, r.fk_type, r.fk_vill " +
-                "FROM RESTAURANTS r WHERE r.fk_vill = ? ORDER BY r.nom";
-
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, cityId);
-
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Restaurant restaurant = mapResultSetToRestaurant(rs);
-                    restaurants.add(restaurant);
-                    addToCache(restaurant);
-                }
-            }
-        } catch (SQLException ex) {
-            logger.error("Erreur lors de la recherche par ville: {}", ex.getMessage());
-        }
-        return restaurants;
-    }
 
     /**
      * Recherche les restaurants par type
@@ -277,24 +202,22 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
 
     /**
      * Convertit une ligne de ResultSet en objet Restaurant
-     * IMPORTANT : Charge aussi les objets liés (City et RestaurantType)
+     * Charge aussi les objets liés (City et RestaurantType)
      */
     private Restaurant mapResultSetToRestaurant(ResultSet rs) throws SQLException {
-        Integer id = rs.getInt("numero");
+        int id = rs.getInt("numero");
         String name = rs.getString("nom");
         String street = rs.getString("adresse");
         String description = rs.getString("description");
         String website = rs.getString("site_web");
-        Integer typeId = rs.getInt("fk_type");
-        Integer cityId = rs.getInt("fk_vill");
+        int typeId = rs.getInt("fk_type");
+        int cityId = rs.getInt("fk_vill");
 
         City city = CityMapper.getInstance().findById(cityId);
         RestaurantType type = RestaurantTypeMapper.getInstance().findById(typeId);
         Localisation localisation = new Localisation(street, city);
 
-        Restaurant restaurant = new Restaurant(id, name, description, website, localisation, type);
-
-        return restaurant;
+        return new Restaurant(id, name, description, website, localisation, type);
     }
 
     // MÉTHODES ABSTRAITES
@@ -311,5 +234,38 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
     @Override
     protected String getCountQuery() {
         return COUNT;
+    }
+    /**
+     * Configure les paramètres communs pour insert et update
+     */
+    private void setRestaurantParameters(PreparedStatement stmt, Restaurant restaurant) throws SQLException {
+        stmt.setString(1, restaurant.getName());
+        stmt.setString(2, restaurant.getAddress().getStreet());
+
+        if (restaurant.getDescription() != null) {
+            stmt.setString(3, restaurant.getDescription());
+        } else {
+            stmt.setNull(3, Types.CLOB);
+        }
+
+        if (restaurant.getWebsite() != null) {
+            stmt.setString(4, restaurant.getWebsite());
+        } else {
+            stmt.setNull(4, Types.VARCHAR);
+        }
+
+        stmt.setInt(5, restaurant.getType().getId());
+        stmt.setInt(6, restaurant.getAddress().getCity().getId());
+    }
+    /**
+     * Effectue un rollback et log l'erreur
+     */
+    private void rollbackAndLog(Connection connection, SQLException ex) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            logger.error("Erreur lors du rollback: {}", e.getMessage());
+        }
+        logger.error("Erreur SQL: {}", ex.getMessage());
     }
 }

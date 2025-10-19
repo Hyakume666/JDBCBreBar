@@ -25,7 +25,7 @@ public class City implements IBusinessObject {
         this.id = id;
         this.zipCode = zipCode;
         this.cityName = cityName;
-        this.restaurants = new HashSet();
+        this.restaurants = new HashSet<>();
     }
 
     public Integer getId() {

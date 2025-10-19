@@ -9,6 +9,7 @@ public class EvaluationCriteria implements IBusinessObject {
     private String name;
     private String description;
 
+    @SuppressWarnings("unused")
     public EvaluationCriteria() {
         this(null, null);
     }
@@ -35,6 +36,7 @@ public class EvaluationCriteria implements IBusinessObject {
         return name;
     }
 
+    @SuppressWarnings("unused")
     public void setName(String name) {
         this.name = name;
     }
@@ -43,6 +45,7 @@ public class EvaluationCriteria implements IBusinessObject {
         return description;
     }
 
+    @SuppressWarnings("unused")
     public void setDescription(String description) {
         this.description = description;
     }

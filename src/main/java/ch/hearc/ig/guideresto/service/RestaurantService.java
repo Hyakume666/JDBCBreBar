@@ -9,12 +9,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 
-/**
- * Couche de service principale pour l'application GuideResto.
- * Sert de pont entre la couche de présentation (Application) et la couche de persistance (Mappers).
- * C'est ici que la logique métier et la gestion des transactions sont centralisées.
- * @author votre.nom
- */
 public class RestaurantService {
 
     private static final Logger logger = LogManager.getLogger(RestaurantService.class);
@@ -34,7 +28,6 @@ public class RestaurantService {
 
     /**
      * Récupère tous les restaurants avec leurs évaluations.
-     * C'est une opération de lecture simple, donc pas de gestion de transaction explicite nécessaire.
      * @return Un Set de tous les restaurants avec leurs évaluations.
      */
     public Set<Restaurant> getAllRestaurantsWithEvaluations() {
@@ -75,7 +68,7 @@ public class RestaurantService {
     /**
      * Crée un nouveau restaurant.
      * Gère la transaction complète avec commit/rollback.
-     * @param restaurant Le restaurant à créer.
+     * @param restaurant Le restaurant qui va être créé.
      * @return Le restaurant créé avec son ID, ou null en cas d'erreur.
      */
     public Restaurant createRestaurant(Restaurant restaurant) {
@@ -100,12 +93,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la création du restaurant: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
             return null;
         }
     }
@@ -113,7 +101,6 @@ public class RestaurantService {
     /**
      * Met à jour un restaurant existant.
      * Gère la transaction complète avec commit/rollback.
-     *
      * @param restaurant Le restaurant à mettre à jour.
      * @return true si la mise à jour a réussi, false sinon.
      */
@@ -139,12 +126,7 @@ public class RestaurantService {
 
             return success;
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la mise à jour du restaurant: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
             return false;
         }
     }
@@ -177,12 +159,7 @@ public class RestaurantService {
 
             return success;
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la suppression du restaurant: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
             return false;
         }
     }
@@ -190,7 +167,7 @@ public class RestaurantService {
     /**
      * Ajoute une évaluation basique (like/dislike) pour un restaurant.
      * Gère la transaction.
-     * @param restaurant Le restaurant à évaluer.
+     * @param restaurant Le restaurant a évalué.
      * @param like true pour un like, false pour un dislike.
      * @param ipAddress L'adresse IP de l'utilisateur.
      * @return L'évaluation créée, ou null en cas d'erreur.
@@ -227,12 +204,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de l'ajout de l'évaluation basique: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
             return null;
         }
     }
@@ -240,7 +212,7 @@ public class RestaurantService {
     /**
      * Ajoute une évaluation complète avec commentaire et notes pour un restaurant.
      * Gère la transaction complète (évaluation + notes).
-     * @param restaurant Le restaurant à évaluer.
+     * @param restaurant Le restaurant a évalué.
      * @param username Le nom d'utilisateur.
      * @param comment Le commentaire.
      * @param grades Map des critères avec leurs notes (de 1 à 5).
@@ -293,12 +265,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de l'ajout de l'évaluation complète: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
             return null;
         }
     }
@@ -340,12 +307,7 @@ public class RestaurantService {
                 return null;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la création de la ville: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
             return null;
         }
     }
@@ -366,5 +328,16 @@ public class RestaurantService {
     public Set<EvaluationCriteria> getAllEvaluationCriterias() {
         logger.info("Récupération de tous les critères d'évaluation");
         return EvaluationCriteriaMapper.getInstance().findAll();
+    }
+    /**
+     * Effectue un rollback et log l'erreur
+     */
+    private void rollbackAndLog(Connection connection, SQLException ex) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            logger.error("Erreur lors du rollback: {}", e.getMessage());
+        }
+        logger.error("Erreur SQL: {}", ex.getMessage());
     }
 }

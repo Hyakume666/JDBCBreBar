@@ -27,7 +27,7 @@ public class Restaurant implements IBusinessObject {
         this.name = name;
         this.description = description;
         this.website = website;
-        this.evaluations = new HashSet();
+        this.evaluations = new HashSet<>();
         this.address = new Localisation(street, city);
         this.type = type;
     }
@@ -37,7 +37,7 @@ public class Restaurant implements IBusinessObject {
         this.name = name;
         this.description = description;
         this.website = website;
-        this.evaluations = new HashSet();
+        this.evaluations = new HashSet<>();
         this.address = address;
         this.type = type;
     }
@@ -86,6 +86,7 @@ public class Restaurant implements IBusinessObject {
         return address;
     }
 
+    @SuppressWarnings("unused")
     public void setAddress(Localisation address) {
         this.address = address;
     }
@@ -98,6 +99,7 @@ public class Restaurant implements IBusinessObject {
         this.type = type;
     }
 
+    @SuppressWarnings("unused")
     public boolean hasEvaluations() {
         return CollectionUtils.isNotEmpty(evaluations);
     }

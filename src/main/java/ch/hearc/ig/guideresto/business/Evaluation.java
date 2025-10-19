@@ -33,6 +33,7 @@ public abstract class Evaluation implements IBusinessObject {
         return visitDate;
     }
 
+    @SuppressWarnings("unused")
     public void setVisitDate(Date visitDate) {
         this.visitDate = visitDate;
     }

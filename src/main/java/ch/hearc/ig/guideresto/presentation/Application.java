@@ -226,12 +226,12 @@ public class Application {
         System.out.println("Rue : ");
         String street = readString();
 
-        City city = null;
+        City city;
         do {
             city = pickCity(restaurantService.getAllCities());
         } while (city == null);
 
-        RestaurantType restaurantType = null;
+        RestaurantType restaurantType;
         do {
             restaurantType = pickRestaurantType(restaurantService.getAllRestaurantTypes());
         } while (restaurantType == null);
@@ -269,7 +269,7 @@ public class Application {
         String text;
         for (Evaluation currentEval : restaurant.getEvaluations()) {
             text = getCompleteEvaluationDescription(currentEval);
-            if (text != null) {
+            if (!text.isEmpty()) {
                 sb.append(text).append("\n");
             }
         }
@@ -308,8 +308,7 @@ public class Application {
     private static String getCompleteEvaluationDescription(Evaluation eval) {
         StringBuilder result = new StringBuilder();
 
-        if (eval instanceof CompleteEvaluation) {
-            CompleteEvaluation ce = (CompleteEvaluation) eval;
+        if (eval instanceof CompleteEvaluation ce) {
             result.append("Evaluation de : ").append(ce.getUsername()).append("\n");
             result.append("Commentaire : ").append(ce.getComment()).append("\n");
             for (Grade currentGrade : ce.getGrades()) {
@@ -359,8 +358,6 @@ public class Application {
                 break;
             case 6:
                 deleteRestaurant(restaurant);
-                break;
-            case 0:
                 break;
             default:
                 break;
