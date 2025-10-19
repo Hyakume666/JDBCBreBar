@@ -1,6 +1,5 @@
 package ch.hearc.ig.guideresto.persistence;
 
-import ch.hearc.ig.guideresto.business.CompleteEvaluation;
 import ch.hearc.ig.guideresto.business.EvaluationCriteria;
 import ch.hearc.ig.guideresto.business.Grade;
 
@@ -52,12 +51,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return grade;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la création de la note: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return null;
     }
@@ -134,12 +128,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la mise à jour de la note: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return false;
     }
@@ -162,44 +151,55 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return true;
             }
         } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
-            }
-            logger.error("Erreur lors de la suppression de la note: {}", ex.getMessage());
+            rollbackAndLog(connection, ex);
         }
         return false;
     }
 
     public boolean deleteByEvaluationId(int evaluationId) {
         Connection connection = ConnectionUtils.getConnection();
+        try {
+            Set<Grade> gradesToDelete = findByEvaluationId(evaluationId);
         try (PreparedStatement stmt = connection.prepareStatement(DELETE_BY_EVALUATION)) {
             stmt.setInt(1, evaluationId);
             int rowsAffected = stmt.executeUpdate();
             connection.commit();
-            // Il faudrait une meilleure façon de vider une partie du cache...
-            // Pour l'instant, on laisse comme ça.
+            for (Grade grade : gradesToDelete) {
+                removeFromCache(grade.getId());
+            }
             logger.info("{} notes supprimées pour l'évaluation {}", rowsAffected, evaluationId);
             return true;
-        } catch (SQLException ex) {
-            try {
-                connection.rollback();
-            } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
             }
-            logger.error("Erreur lors de la suppression des notes de l'évaluation: {}", ex.getMessage());
+        } catch (SQLException ex) {
+            rollbackAndLog(connection, ex);
         }
         return false;
     }
 
+
     private Grade mapResultSetToGrade(ResultSet rs) throws SQLException {
-        Integer id = rs.getInt("numero");
-        Integer gradeValue = rs.getInt("note");
-        Integer criteriaId = rs.getInt("fk_crit");
+        int id = rs.getInt("numero");
+        int gradeValue = rs.getInt("note");
+        int criteriaId = rs.getInt("fk_crit");
         EvaluationCriteria criteria = EvaluationCriteriaMapper.getInstance().findById(criteriaId);
         return new Grade(id, gradeValue, null, criteria);
     }
+
+    /**
+     * Effectue un rollback et log l'erreur SQL.
+     * Méthode utilitaire pour éviter la duplication de code.
+     * @param connection La connexion à rollback
+     * @param ex L'exception SQL à logger
+     */
+    private void rollbackAndLog(Connection connection, SQLException ex) {
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            logger.error("Erreur lors du rollback: {}", e.getMessage());
+        }
+        logger.error("Erreur SQL: {}", ex.getMessage());
+    }
+
 
     @Override
     protected String getSequenceQuery() {

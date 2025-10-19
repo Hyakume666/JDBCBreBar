@@ -54,7 +54,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans create(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la création du critère: {}", ex.getMessage());
         }
@@ -121,7 +121,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans update(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la mise à jour du critère: {}", ex.getMessage());
         }
@@ -149,7 +149,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             try {
                 connection.rollback();
             } catch (SQLException e) {
-                logger.error("Erreur lors du rollback: {}", e.getMessage());
+                logger.error("Erreur lors du rollback dans deleteById(): {}", e.getMessage());
             }
             logger.error("Erreur lors de la suppression du critère: {}", ex.getMessage());
         }

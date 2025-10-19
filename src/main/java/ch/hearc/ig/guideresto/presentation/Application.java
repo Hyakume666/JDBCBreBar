@@ -329,8 +329,8 @@ public class Application {
         System.out.println("1. J'aime ce restaurant !");
         System.out.println("2. Je n'aime pas ce restaurant !");
         System.out.println("3. Faire une évaluation complète de ce restaurant !");
-        System.out.println("4. Editer ce restaurant");
-        System.out.println("5. Editer l'adresse du restaurant");
+        System.out.println("4. Éditer ce restaurant");
+        System.out.println("5. Éditer l'adresse du restaurant");
         System.out.println("6. Supprimer ce restaurant");
         System.out.println("0. Revenir au menu principal");
     }
@@ -379,7 +379,6 @@ public class Application {
             ipAddress = "Indisponible";
         }
 
-        // CHANGEMENT: Utilise RestaurantService au lieu de BasicEvaluationMapper
         BasicEvaluation eval = restaurantService.addBasicEvaluation(restaurant, like, ipAddress);
 
         if (eval != null) {
@@ -477,7 +476,7 @@ public class Application {
      * Après confirmation par l'utilisateur, supprime complètement le restaurant et toutes ses évaluations
      */
     private static void deleteRestaurant(Restaurant restaurant) {
-        System.out.println("Etes-vous sûr de vouloir supprimer ce restaurant ? (O/n)");
+        System.out.println("Êtes-vous sûr de vouloir supprimer ce restaurant ? (O/n)");
         String choice = readString();
         if (choice.equals("o") || choice.equals("O")) {
             boolean success = restaurantService.deleteRestaurant(restaurant);

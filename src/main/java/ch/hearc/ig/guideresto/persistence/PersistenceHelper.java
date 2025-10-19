@@ -13,26 +13,13 @@ public class PersistenceHelper {
     /**
      * Charge un restaurant avec TOUTES ses évaluations (Basic + Complete)
      */
+    @SuppressWarnings("unused")
     public static Restaurant loadRestaurantWithEvaluations(int restaurantId) {
         Restaurant restaurant = RestaurantMapper.getInstance().findById(restaurantId);
 
         if (restaurant != null) {
-            // Charger les évaluations basiques
-            Set<BasicEvaluation> basicEvaluations =
-                    BasicEvaluationMapper.getInstance().findByRestaurantId(restaurantId);
-
-            // Charger les évaluations complètes
-            Set<CompleteEvaluation> completeEvaluations =
-                    CompleteEvaluationMapper.getInstance().findByRestaurantId(restaurantId);
-
-            // Ajouter toutes les évaluations au restaurant
-            Set<Evaluation> allEvaluations = new HashSet<>();
-            allEvaluations.addAll(basicEvaluations);
-            allEvaluations.addAll(completeEvaluations);
-
-            restaurant.setEvaluations(allEvaluations);
+            loadEvaluationsForRestaurant(restaurant);
         }
-
         return restaurant;
     }
 
@@ -43,20 +30,7 @@ public class PersistenceHelper {
         Set<Restaurant> restaurants = RestaurantMapper.getInstance().findAll();
 
         for (Restaurant restaurant : restaurants) {
-            // Charger les évaluations basiques
-            Set<BasicEvaluation> basicEvaluations =
-                    BasicEvaluationMapper.getInstance().findByRestaurantId(restaurant.getId());
-
-            // Charger les évaluations complètes
-            Set<CompleteEvaluation> completeEvaluations =
-                    CompleteEvaluationMapper.getInstance().findByRestaurantId(restaurant.getId());
-
-            // Ajouter toutes les évaluations au restaurant
-            Set<Evaluation> allEvaluations = new HashSet<>();
-            allEvaluations.addAll(basicEvaluations);
-            allEvaluations.addAll(completeEvaluations);
-
-            restaurant.setEvaluations(allEvaluations);
+            loadEvaluationsForRestaurant(restaurant);
         }
 
         return restaurants;
@@ -150,6 +124,7 @@ public class PersistenceHelper {
     /**
      * Charge toutes les villes
      */
+    @SuppressWarnings("unused")
     public static Set<City> loadAllCities() {
         return CityMapper.getInstance().findAll();
     }
@@ -157,6 +132,7 @@ public class PersistenceHelper {
     /**
      * Charge tous les types de restaurants
      */
+    @SuppressWarnings("unused")
     public static Set<RestaurantType> loadAllRestaurantTypes() {
         return RestaurantTypeMapper.getInstance().findAll();
     }
@@ -164,7 +140,9 @@ public class PersistenceHelper {
     /**
      * Charge tous les critères d'évaluation
      */
+    @SuppressWarnings("unused")
     public static Set<EvaluationCriteria> loadAllEvaluationCriterias() {
         return EvaluationCriteriaMapper.getInstance().findAll();
     }
+
 }

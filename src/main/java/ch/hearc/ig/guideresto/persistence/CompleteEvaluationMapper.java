@@ -128,7 +128,12 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 connection.commit();
-                GradeMapper.getInstance().deleteByEvaluationId(evaluation.getId());
+
+                boolean gradesDeleted = GradeMapper.getInstance().deleteByEvaluationId(evaluation.getId());
+                if (!gradesDeleted) {
+                    logger.warn("Échec de la suppression des anciennes notes pour l'évaluation {}", evaluation.getId());
+                }
+
                 createGrades(evaluation);
                 addToCache(evaluation);
                 logger.info("Évaluation complète {} mise à jour avec succès", evaluation.getId());

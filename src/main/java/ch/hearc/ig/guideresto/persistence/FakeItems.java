@@ -9,6 +9,7 @@ import java.util.Set;
 /**
  * @author cedric.baudet
  */
+@SuppressWarnings("unused")
 public class FakeItems {
 
     private static Set<RestaurantType> types;

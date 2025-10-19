@@ -38,9 +38,8 @@ public class ConnectionUtils {
                 connection.setAutoCommit(false);
                 ConnectionUtils.connection = connection;
             }
-        } catch (SQLException ex) {
-            logger.error(ex.getMessage(), ex);
-        } catch (MissingResourceException ex) {
+
+        } catch (SQLException | MissingResourceException ex) {
             logger.error(ex.getMessage(), ex);
         }
         return ConnectionUtils.connection;
