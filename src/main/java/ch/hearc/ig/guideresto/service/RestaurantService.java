@@ -84,15 +84,15 @@ public class RestaurantService {
             Restaurant created = RestaurantMapper.getInstance().create(restaurant);
 
             if (created != null) {
-                connection.commit(); // ✅ Commit ici
+                connection.commit();
                 logger.info("Restaurant créé avec succès (ID: {})", created.getId());
                 return created;
             } else {
-                connection.rollback(); // ✅ Rollback ici
+                connection.rollback();
                 logger.error("Échec de la création du restaurant");
                 return null;
             }
-        } catch (Exception ex) { // ✅ MODIFIER : SQLException -> Exception
+        } catch (Exception ex) {
             try {
                 connection.rollback();
             } catch (SQLException e) {
@@ -102,13 +102,6 @@ public class RestaurantService {
             return null;
         }
     }
-
-// Appliquer le même pattern (catch Exception au lieu de SQLException) à :
-// - updateRestaurant()
-// - deleteRestaurant()
-// - addBasicEvaluation()
-// - addCompleteEvaluation()
-// - createCity()
 
     /**
      * Met à jour un restaurant existant.
@@ -137,10 +130,15 @@ public class RestaurantService {
             }
 
             return success;
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+        } catch (Exception ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.error("Rollback échoué lors de la mise à jour du restaurant: {}", e.getMessage());
+            }
+            logger.error("Erreur lors de la mise à jour du restaurant: {}", ex.getMessage());
+            return false;
         }
-
     }
 
     /**
@@ -170,9 +168,15 @@ public class RestaurantService {
             }
 
             return success;
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);}
-
+        } catch (Exception ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.error("Rollback échoué lors de la suppression du restaurant: {}", e.getMessage());
+            }
+            logger.error("Erreur lors de la suppression du restaurant: {}", ex.getMessage());
+            return false;
+        }
     }
 
     /**
@@ -214,8 +218,14 @@ public class RestaurantService {
                 logger.error("Échec de la création de l'évaluation basique");
                 return null;
             }
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+        } catch (Exception ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.error("Rollback échoué lors de l'ajout de l'évaluation basique: {}", e.getMessage());
+            }
+            logger.error("Erreur lors de l'ajout de l'évaluation basique: {}", ex.getMessage());
+            return null;
         }
     }
 
@@ -262,6 +272,7 @@ public class RestaurantService {
                 Grade grade = new Grade(null, entry.getValue(), evaluation, entry.getKey());
                 evaluation.getGrades().add(grade);
             }
+
             CompleteEvaluation created = CompleteEvaluationMapper.getInstance().create(evaluation);
 
             if (created != null) {
@@ -274,8 +285,14 @@ public class RestaurantService {
                 logger.error("Échec de la création de l'évaluation complète");
                 return null;
             }
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+        } catch (Exception ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.error("Rollback échoué lors de l'ajout de l'évaluation complète: {}", e.getMessage());
+            }
+            logger.error("Erreur lors de l'ajout de l'évaluation complète: {}", ex.getMessage());
+            return null;
         }
     }
 
@@ -315,8 +332,14 @@ public class RestaurantService {
                 logger.error("Échec de la création de la ville");
                 return null;
             }
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+        } catch (Exception ex) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.error("Rollback échoué lors de la création de la ville: {}", e.getMessage());
+            }
+            logger.error("Erreur lors de la création de la ville: {}", ex.getMessage());
+            return null;
         }
     }
 

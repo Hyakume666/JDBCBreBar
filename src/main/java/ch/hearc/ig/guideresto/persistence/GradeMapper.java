@@ -45,7 +45,6 @@ public class GradeMapper extends AbstractMapper<Grade> {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 grade.setId(getSequenceValue());
-                connection.commit();
                 addToCache(grade);
                 logger.info("Note créée avec succès (ID: {})", grade.getId());
                 return grade;
@@ -122,7 +121,6 @@ public class GradeMapper extends AbstractMapper<Grade> {
             stmt.setInt(4, grade.getId());
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
-                connection.commit();
                 addToCache(grade);
                 logger.info("Note {} mise à jour avec succès", grade.getId());
                 return true;

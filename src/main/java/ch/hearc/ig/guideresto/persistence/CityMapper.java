@@ -41,7 +41,6 @@ public class CityMapper extends AbstractMapper<City> {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 city.setId(getSequenceValue());
-                connection.commit();
                 addToCache(city);
                 logger.info("Ville créée avec succès : {} (ID: {})", city.getCityName(), city.getId());
                 return city;
