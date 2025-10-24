@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration xmlns="https://logging.apache.org/xml/ns"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="
-                   https://logging.apache.org/xml/ns
-                   https://logging.apache.org/xml/ns/log4j-config-2.xsd">
+<Configuration status="WARN">
     <Appenders>
-        <Console name="CONSOLE">
+        <Console name="CONSOLE" target="SYSTEM_OUT">
             <PatternLayout pattern="%p - %c{1}:%L - %m%n"/>
         </Console>
         <File name="MAIN" fileName="logs/main.log">
