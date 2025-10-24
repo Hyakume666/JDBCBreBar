@@ -12,15 +12,69 @@ import java.util.*;
 /**
  * Service dédié à la gestion des évaluations (basiques et complètes).
  * Sépare les responsabilités selon le principe SOLID.
+ *
+ * <p>Ce service gère deux types d'évaluations :</p>
+ * <ul>
+ *   <li><strong>Évaluations basiques :</strong> Simple like/dislike avec adresse IP</li>
+ *   <li><strong>Évaluations complètes :</strong> Commentaire + notes détaillées par critères</li>
+ * </ul>
+ *
+ * <p><strong>Responsabilités :</strong></p>
+ * <ul>
+ *   <li>Validation des données d'évaluation</li>
+ *   <li>Création d'évaluations basiques et complètes</li>
+ *   <li>Gestion des notes par critères</li>
+ *   <li>Gestion transactionnelle (commit/rollback)</li>
+ * </ul>
+ *
+ * <p><strong>Pattern utilisé :</strong> Singleton</p>
+ *
+ * <p><strong>Validation des notes :</strong><br>
+ * Les notes doivent être comprises entre {@link Constants.Evaluation#MIN_GRADE}
+ * et {@link Constants.Evaluation#MAX_GRADE}.</p>
+ *
+ * <p><strong>Exemple d'utilisation :</strong></p>
+ * <pre>
+ * EvaluationService service = EvaluationService.getInstance();
+ *
+ * // Évaluation basique
+ * BasicEvaluation like = service.addBasicEvaluation(restaurant, true, "192.168.1.1");
+ *
+ * // Évaluation complète
+ * Map&lt;EvaluationCriteria, Integer&gt; grades = new HashMap&lt;&gt;();
+ * grades.put(criteriaService, 5);
+ * grades.put(criteriaCuisine, 4);
+ * CompleteEvaluation eval = service.addCompleteEvaluation(
+ *     restaurant, "John Doe", "Excellent !", grades
+ * );
+ * </pre>
+ *
+ * @author Votre Nom
+ * @version 1.0
+ * @since 1.0
+ * @see BasicEvaluation
+ * @see CompleteEvaluation
+ * @see EvaluationCriteria
+ * @see Grade
  */
 public class EvaluationService {
 
     private static final Logger logger = LogManager.getLogger(EvaluationService.class);
     private static EvaluationService instance;
 
+    /**
+     * Constructeur privé pour le pattern Singleton.
+     * Empêche l'instanciation directe de la classe.
+     */
     private EvaluationService() {
     }
 
+    /**
+     * Retourne l'instance unique du service (pattern Singleton).
+     * Crée l'instance lors du premier appel (lazy initialization).
+     *
+     * @return L'instance unique de EvaluationService, jamais null
+     */
     public static EvaluationService getInstance() {
         if (instance == null) {
             instance = new EvaluationService();
@@ -30,11 +84,33 @@ public class EvaluationService {
 
     /**
      * Ajoute une évaluation basique (like/dislike) pour un restaurant.
-     * Gère la transaction complète avec commit/rollback.
-     * @param restaurant Le restaurant à évaluer
-     * @param like true pour un like, false pour un dislike
-     * @param ipAddress L'adresse IP de l'utilisateur
-     * @return L'évaluation créée, ou null en cas d'erreur
+     *
+     * <p>Une évaluation basique contient :</p>
+     * <ul>
+     *   <li>Un vote positif ou négatif (like/dislike)</li>
+     *   <li>La date de l'évaluation (générée automatiquement)</li>
+     *   <li>L'adresse IP de l'utilisateur</li>
+     *   <li>Le restaurant évalué</li>
+     * </ul>
+     *
+     * <p><strong>Gestion transactionnelle :</strong><br>
+     * Cette méthode gère automatiquement la transaction avec commit en cas
+     * de succès et rollback en cas d'erreur.</p>
+     *
+     * <p><strong>Validation :</strong></p>
+     * <ul>
+     *   <li>Le restaurant ne peut pas être null</li>
+     *   <li>Le restaurant doit avoir un ID valide</li>
+     *   <li>Le like ne peut pas être null</li>
+     *   <li>L'adresse IP ne peut pas être null ou vide</li>
+     * </ul>
+     *
+     * @param restaurant Le restaurant à évaluer (ne peut pas être null, doit avoir un ID)
+     * @param like true pour un like, false pour un dislike (ne peut pas être null)
+     * @param ipAddress L'adresse IP de l'utilisateur (ne peut pas être null ou vide)
+     * @return L'évaluation créée avec son ID généré, ou null en cas d'erreur
+     * @see BasicEvaluation
+     * @see BasicEvaluationMapper#create(BasicEvaluation)
      */
     public BasicEvaluation addBasicEvaluation(Restaurant restaurant, Boolean like, String ipAddress) {
         if (restaurant == null || restaurant.getId() == null) {
@@ -79,14 +155,62 @@ public class EvaluationService {
     }
 
     /**
-     * Ajoute une évaluation complète avec commentaire et notes.
-     * Valide que toutes les notes sont entre MIN_GRADE et MAX_GRADE.
-     * Gère la transaction complète avec commit/rollback.
-     * @param restaurant Le restaurant à évaluer
-     * @param username Le nom d'utilisateur
-     * @param comment Le commentaire
-     * @param grades Map des critères avec leurs notes (de MIN_GRADE à MAX_GRADE)
-     * @return L'évaluation complète créée, ou null en cas d'erreur
+     * Ajoute une évaluation complète avec commentaire et notes détaillées.
+     *
+     * <p>Une évaluation complète contient :</p>
+     * <ul>
+     *   <li>Un nom d'utilisateur</li>
+     *   <li>Un commentaire textuel</li>
+     *   <li>La date de l'évaluation (générée automatiquement)</li>
+     *   <li>Des notes (de 1 à 5) pour chaque critère d'évaluation</li>
+     *   <li>Le restaurant évalué</li>
+     * </ul>
+     *
+     * <p><strong>Validation des notes :</strong><br>
+     * Toutes les notes doivent être comprises entre
+     * {@link Constants.Evaluation#MIN_GRADE} et {@link Constants.Evaluation#MAX_GRADE}.
+     * Si une note est invalide, l'évaluation complète est rejetée.</p>
+     *
+     * <p><strong>Gestion transactionnelle :</strong><br>
+     * L'évaluation complète et toutes ses notes sont créées dans une seule transaction.
+     * En cas d'erreur, un rollback complet est effectué.</p>
+     *
+     * <p><strong>Validation :</strong></p>
+     * <ul>
+     *   <li>Le restaurant ne peut pas être null et doit avoir un ID valide</li>
+     *   <li>Le nom d'utilisateur ne peut pas être null ou vide</li>
+     *   <li>Au moins une note doit être fournie</li>
+     *   <li>Toutes les notes doivent être entre MIN_GRADE et MAX_GRADE</li>
+     *   <li>Chaque critère doit avoir un ID valide</li>
+     * </ul>
+     *
+     * <p><strong>Exemple d'utilisation :</strong></p>
+     * <pre>
+     * Map&lt;EvaluationCriteria, Integer&gt; grades = new HashMap&lt;&gt;();
+     * grades.put(criteriaService, 5);
+     * grades.put(criteriaCuisine, 4);
+     * grades.put(criteriaCadre, 5);
+     *
+     * CompleteEvaluation eval = service.addCompleteEvaluation(
+     *     restaurant,
+     *     "Marie Dupont",
+     *     "Excellent restaurant, service impeccable !",
+     *     grades
+     * );
+     * </pre>
+     *
+     * @param restaurant Le restaurant à évaluer (ne peut pas être null, doit avoir un ID)
+     * @param username Le nom d'utilisateur (ne peut pas être null ou vide)
+     * @param comment Le commentaire de l'évaluation (peut être null)
+     * @param grades Map des critères avec leurs notes (de MIN_GRADE à MAX_GRADE).
+     *               Ne peut pas être null ou vide.
+     * @return L'évaluation complète créée avec son ID généré, ou null en cas d'erreur
+     * @see CompleteEvaluation
+     * @see Grade
+     * @see EvaluationCriteria
+     * @see Constants.Evaluation#MIN_GRADE
+     * @see Constants.Evaluation#MAX_GRADE
+     * @see CompleteEvaluationMapper#create(CompleteEvaluation)
      */
     public CompleteEvaluation addCompleteEvaluation(
             Restaurant restaurant,
@@ -156,8 +280,23 @@ public class EvaluationService {
     }
 
     /**
-     * Récupère tous les critères d'évaluation disponibles.
-     * @return Un Set de tous les critères
+     * Récupère tous les critères d'évaluation disponibles dans le système.
+     *
+     * <p>Les critères d'évaluation sont utilisés pour noter les restaurants
+     * dans les évaluations complètes. Exemples de critères :</p>
+     * <ul>
+     *   <li>Service</li>
+     *   <li>Cuisine / Qualité de la nourriture</li>
+     *   <li>Cadre / Ambiance</li>
+     *   <li>Rapport qualité/prix</li>
+     * </ul>
+     *
+     * <p>Les critères sont triés par ordre alphabétique.</p>
+     *
+     * @return Un Set de tous les critères d'évaluation disponibles.
+     *         Retourne un Set vide si aucun critère n'existe. Jamais null.
+     * @see EvaluationCriteria
+     * @see EvaluationCriteriaMapper#findAll()
      */
     public Set<EvaluationCriteria> getAllEvaluationCriterias() {
         logger.info("Récupération de tous les critères d'évaluation");
