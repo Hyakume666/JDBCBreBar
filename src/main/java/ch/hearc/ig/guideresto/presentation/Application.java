@@ -23,10 +23,16 @@ public class Application {
     private static final RestaurantService restaurantService = RestaurantService.getInstance();
     private static final EvaluationService evaluationService = EvaluationService.getInstance();
 
+    // Constantes pour l'affichage
+    private static final String DOUBLE_LINE = "══════════════════════════════════════════════════════════════";
+    private static final String SINGLE_LINE = "──────────────────────────────────────────────────────────────";
+    private static final String STAR_LINE = "**************************************************************";
+
     public static void main(String[] args) {
         scanner = new Scanner(System.in);
 
-        System.out.println("Bienvenue dans GuideResto ! Que souhaitez-vous faire ?");
+        printWelcomeHeader();
+
         int choice;
         do {
             printMainMenu();
@@ -34,23 +40,59 @@ public class Application {
             proceedMainMenu(choice);
         } while (choice != 0);
 
+        printGoodbyeMessage();
+
         // Fermer la connexion à la fin
         ConnectionUtils.closeConnection();
-        System.out.println("Connexion fermée. À bientôt !");
     }
 
     /**
-     * Affichage du menu principal de l'application
+     * Affiche l'en-tête de bienvenue de l'application
+     */
+    private static void printWelcomeHeader() {
+        System.out.println();
+        System.out.println(DOUBLE_LINE);
+        System.out.println("║                                                            ║");
+        System.out.println("║              🍽️  GUIDERESTO - JDBC Edition  🍽️              ║");
+        System.out.println("║                                                            ║");
+        System.out.println("║           Système de gestion de restaurants                ║");
+        System.out.println("║                    Version 1.0.0                           ║");
+        System.out.println("║                                                            ║");
+        System.out.println(DOUBLE_LINE);
+        System.out.println();
+    }
+
+    /**
+     * Affiche le message d'au revoir
+     */
+    private static void printGoodbyeMessage() {
+        System.out.println();
+        System.out.println(STAR_LINE);
+        System.out.println("         Merci d'avoir utilisé GuideResto !");
+        System.out.println("              À bientôt ! 👋");
+        System.out.println(STAR_LINE);
+        System.out.println();
+    }
+
+    /**
+     * Affiche le menu principal de l'application
      */
     private static void printMainMenu() {
-        System.out.println("======================================================");
-        System.out.println("Que voulez-vous faire ?");
-        System.out.println("1. Afficher la liste de tous les restaurants");
-        System.out.println("2. Rechercher un restaurant par son nom");
-        System.out.println("3. Rechercher un restaurant par ville");
-        System.out.println("4. Rechercher un restaurant par son type de cuisine");
-        System.out.println("5. Saisir un nouveau restaurant");
-        System.out.println("0. Quitter l'application");
+        System.out.println();
+        System.out.println(DOUBLE_LINE);
+        System.out.println("                        MENU PRINCIPAL");
+        System.out.println(DOUBLE_LINE);
+        System.out.println();
+        System.out.println("  [1] 📋  Afficher la liste de tous les restaurants");
+        System.out.println("  [2] 🔍  Rechercher un restaurant par son nom");
+        System.out.println("  [3] 🏙️   Rechercher un restaurant par ville");
+        System.out.println("  [4] 🍕  Rechercher un restaurant par son type de cuisine");
+        System.out.println("  [5] ➕  Saisir un nouveau restaurant");
+        System.out.println();
+        System.out.println("  [0] 🚪  Quitter l'application");
+        System.out.println();
+        System.out.println(SINGLE_LINE);
+        System.out.print("Votre choix : ");
     }
 
     /**
@@ -59,6 +101,7 @@ public class Application {
      * @param choice Un nombre entre 0 et 5.
      */
     private static void proceedMainMenu(int choice) {
+        System.out.println();
         switch (choice) {
             case 1:
                 showRestaurantsList();
@@ -76,10 +119,10 @@ public class Application {
                 addNewRestaurant();
                 break;
             case 0:
-                System.out.println("Au revoir !");
+                // Le message d'au revoir sera affiché après la boucle
                 break;
             default:
-                System.out.println(Constants.Messages.ERROR_INVALID_INPUT);
+                printError(Constants.Messages.ERROR_INVALID_INPUT);
                 break;
         }
     }
@@ -91,30 +134,48 @@ public class Application {
      */
     private static Restaurant pickRestaurant(Set<Restaurant> restaurants) {
         if (restaurants.isEmpty()) {
-            System.out.println("Aucun restaurant n'a été trouvé !");
+            printWarning("Aucun restaurant n'a été trouvé !");
             return null;
         }
 
-        String result;
+        printSectionHeader("Liste des restaurants");
+
+        int count = 1;
         for (Restaurant currentRest : restaurants) {
-            result = "";
-            result = "\"" + result + currentRest.getName() + "\" - " + currentRest.getAddress().getStreet() + " - ";
-            result = result + currentRest.getAddress().getCity().getZipCode() + " " + currentRest.getAddress().getCity().getCityName();
-            System.out.println(result);
+            System.out.printf("  [%d] %s%n", count++, formatRestaurantOneLine(currentRest));
         }
 
-        System.out.println("Veuillez saisir le nom exact du restaurant dont vous voulez voir le détail, ou appuyez sur Enter pour revenir en arrière");
+        System.out.println();
+        System.out.println(SINGLE_LINE);
+        System.out.println("Saisissez le nom exact du restaurant pour voir les détails");
+        System.out.println("ou appuyez sur [Entrée] pour revenir en arrière");
+        System.out.println(SINGLE_LINE);
+        System.out.print("Votre choix : ");
         String choice = readString();
 
+        if (choice.isEmpty()) {
+            return null;
+        }
+
         return searchRestaurantByName(restaurants, choice);
+    }
+
+    /**
+     * Formate un restaurant sur une seule ligne
+     */
+    private static String formatRestaurantOneLine(Restaurant restaurant) {
+        return String.format("\"%s\" - %s, %s %s",
+                restaurant.getName(),
+                restaurant.getAddress().getStreet(),
+                restaurant.getAddress().getCity().getZipCode(),
+                restaurant.getAddress().getCity().getCityName());
     }
 
     /**
      * Affiche la liste de tous les restaurants, sans filtre
      */
     private static void showRestaurantsList() {
-        System.out.println("Liste des restaurants : ");
-
+        printSectionHeader("Tous les restaurants");
         Restaurant restaurant = pickRestaurant(restaurantService.getAllRestaurantsWithEvaluations());
 
         if (restaurant != null) {
@@ -126,8 +187,14 @@ public class Application {
      * Affiche une liste de restaurants dont le nom contient une chaîne de caractères saisie par l'utilisateur
      */
     private static void searchRestaurantByName() {
-        System.out.println("Veuillez entrer une partie du nom recherché : ");
+        printSectionHeader("Recherche par nom");
+        System.out.print("Entrez une partie du nom recherché : ");
         String research = readString();
+
+        if (research.isEmpty()) {
+            printWarning("Recherche annulée");
+            return;
+        }
 
         Set<Restaurant> filteredList = restaurantService.searchRestaurantsByName(research);
 
@@ -142,8 +209,15 @@ public class Application {
      * Affiche une liste de restaurants dont le nom de la ville contient une chaîne de caractères saisie par l'utilisateur
      */
     private static void searchRestaurantByCity() {
-        System.out.println("Veuillez entrer une partie du nom de la ville désirée : ");
+        printSectionHeader("Recherche par ville");
+        System.out.print("Entrez une partie du nom de la ville : ");
         String research = readString();
+
+        if (research.isEmpty()) {
+            printWarning("Recherche annulée");
+            return;
+        }
+
         Set<Restaurant> filteredList = restaurantService.searchRestaurantsByCity(research);
 
         Restaurant restaurant = pickRestaurant(filteredList);
@@ -159,22 +233,34 @@ public class Application {
      * @return La ville sélectionnée, ou null si aucune ville n'a été choisie.
      */
     private static City pickCity(Set<City> cities) {
-        System.out.println("Voici la liste des villes possibles, veuillez entrer le NPA de la ville désirée : ");
+        printSectionHeader("Sélection de la ville");
 
+        System.out.println("Villes disponibles :");
+        System.out.println();
         for (City currentCity : cities) {
-            System.out.println(currentCity.getZipCode() + " " + currentCity.getCityName());
+            System.out.printf("  • %s - %s%n", currentCity.getZipCode(), currentCity.getCityName());
         }
-        System.out.println("Entrez \"NEW\" pour créer une nouvelle ville");
+
+        System.out.println();
+        System.out.println(SINGLE_LINE);
+        System.out.println("Entrez le NPA de la ville désirée");
+        System.out.println("ou tapez \"NEW\" pour créer une nouvelle ville");
+        System.out.println(SINGLE_LINE);
+        System.out.print("Votre choix : ");
         String choice = readString();
 
-        if (choice.equals("NEW")) {
+        if (choice.equalsIgnoreCase("NEW")) {
             City city = new City();
-            System.out.println("Veuillez entrer le NPA de la nouvelle ville : ");
+            System.out.print("\nNPA de la nouvelle ville : ");
             city.setZipCode(readString());
-            System.out.println("Veuillez entrer le nom de la nouvelle ville : ");
+            System.out.print("Nom de la nouvelle ville : ");
             city.setCityName(readString());
 
             city = restaurantService.createCity(city);
+
+            if (city != null) {
+                printSuccess("Ville créée avec succès !");
+            }
 
             return city;
         }
@@ -188,10 +274,17 @@ public class Application {
      * @return Le type sélectionné, ou null si aucun type n'a été choisi.
      */
     private static RestaurantType pickRestaurantType(Set<RestaurantType> types) {
-        System.out.println("Voici la liste des types possibles, veuillez entrer le libellé exact du type désiré : ");
+        printSectionHeader("Sélection du type de cuisine");
+
+        System.out.println("Types disponibles :");
+        System.out.println();
         for (RestaurantType currentType : types) {
-            System.out.println("\"" + currentType.getLabel() + "\" : " + currentType.getDescription());
+            System.out.printf("  • \"%s\" - %s%n", currentType.getLabel(), currentType.getDescription());
         }
+
+        System.out.println();
+        System.out.println(SINGLE_LINE);
+        System.out.print("Entrez le libellé exact du type désiré : ");
         String choice = readString();
 
         return searchTypeByLabel(types, choice);
@@ -218,14 +311,15 @@ public class Application {
      * Le programme demande les informations nécessaires à l'utilisateur puis crée un nouveau restaurant dans le système.
      */
     private static void addNewRestaurant() {
-        System.out.println("Vous allez ajouter un nouveau restaurant !");
-        System.out.println("Quel est son nom ?");
+        printSectionHeader("Création d'un nouveau restaurant");
+
+        System.out.print("Nom du restaurant : ");
         String name = readString();
-        System.out.println("Veuillez entrer une courte description : ");
+        System.out.print("Description : ");
         String description = readString();
-        System.out.println("Veuillez entrer l'adresse de son site internet : ");
+        System.out.print("Site internet : ");
         String website = readString();
-        System.out.println("Rue : ");
+        System.out.print("Rue : ");
         String street = readString();
 
         City city;
@@ -244,10 +338,11 @@ public class Application {
         restaurant = restaurantService.createRestaurant(restaurant);
 
         if (restaurant != null) {
-            System.out.println("Restaurant créé avec succès !");
+            printSuccess("Restaurant créé avec succès !");
+            System.out.println();
             showRestaurant(restaurant);
         } else {
-            System.out.println("Erreur lors de la création du restaurant.");
+            printError("Erreur lors de la création du restaurant.");
         }
     }
 
@@ -256,27 +351,64 @@ public class Application {
      * @param restaurant Le restaurant à afficher
      */
     private static void showRestaurant(Restaurant restaurant) {
-        System.out.println("Affichage d'un restaurant : ");
-        StringBuilder sb = new StringBuilder();
-        sb.append(restaurant.getName()).append("\n");
-        sb.append(restaurant.getDescription()).append("\n");
-        sb.append(restaurant.getType().getLabel()).append("\n");
-        sb.append(restaurant.getWebsite()).append("\n");
-        sb.append(restaurant.getAddress().getStreet()).append(", ");
-        sb.append(restaurant.getAddress().getCity().getZipCode()).append(" ").append(restaurant.getAddress().getCity().getCityName()).append("\n");
-        sb.append("Nombre de likes : ").append(countLikes(restaurant.getEvaluations(), true)).append("\n");
-        sb.append("Nombre de dislikes : ").append(countLikes(restaurant.getEvaluations(), false)).append("\n");
-        sb.append("\nEvaluations reçues : ").append("\n");
+        System.out.println();
+        System.out.println(DOUBLE_LINE);
+        System.out.printf("                    %s%n", restaurant.getName().toUpperCase());
+        System.out.println(DOUBLE_LINE);
+        System.out.println();
 
-        String text;
-        for (Evaluation currentEval : restaurant.getEvaluations()) {
-            text = getCompleteEvaluationDescription(currentEval);
-            if (!text.isEmpty()) {
-                sb.append(text).append("\n");
-            }
+        // Informations générales
+        System.out.println("📍 INFORMATIONS");
+        System.out.println(SINGLE_LINE);
+        System.out.printf("   Type de cuisine : %s%n", restaurant.getType().getLabel());
+        System.out.printf("   Adresse         : %s%n", restaurant.getAddress().getStreet());
+        System.out.printf("                     %s %s%n",
+                restaurant.getAddress().getCity().getZipCode(),
+                restaurant.getAddress().getCity().getCityName());
+        if (restaurant.getWebsite() != null && !restaurant.getWebsite().isEmpty()) {
+            System.out.printf("   Site web        : %s%n", restaurant.getWebsite());
+        }
+        System.out.println();
+
+        if (restaurant.getDescription() != null && !restaurant.getDescription().isEmpty()) {
+            System.out.println("📝 DESCRIPTION");
+            System.out.println(SINGLE_LINE);
+            System.out.printf("   %s%n", restaurant.getDescription());
+            System.out.println();
         }
 
-        System.out.println(sb);
+        // Statistiques
+        System.out.println("📊 STATISTIQUES");
+        System.out.println(SINGLE_LINE);
+        int likes = countLikes(restaurant.getEvaluations(), true);
+        int dislikes = countLikes(restaurant.getEvaluations(), false);
+        System.out.printf("   👍 Likes    : %d%n", likes);
+        System.out.printf("   👎 Dislikes : %d%n", dislikes);
+        System.out.println();
+
+        // Évaluations détaillées
+        List<CompleteEvaluation> completeEvals = restaurant.getEvaluations().stream()
+                .filter(e -> e instanceof CompleteEvaluation)
+                .map(e -> (CompleteEvaluation) e)
+                .toList();
+
+        if (!completeEvals.isEmpty()) {
+            System.out.println("💬 ÉVALUATIONS DÉTAILLÉES");
+            System.out.println(SINGLE_LINE);
+            for (CompleteEvaluation eval : completeEvals) {
+                System.out.printf("%n   👤 %s%n", eval.getUsername());
+                System.out.printf("   💭 \"%s\"%n", eval.getComment());
+                System.out.println("   Notes :");
+                for (Grade grade : eval.getGrades()) {
+                    String stars = "★".repeat(grade.getGrade()) + "☆".repeat(5 - grade.getGrade());
+                    System.out.printf("      • %s : %s (%d/5)%n",
+                            grade.getCriteria().getName(),
+                            stars,
+                            grade.getGrade());
+                }
+                System.out.println();
+            }
+        }
 
         int choice;
         do {
@@ -303,37 +435,24 @@ public class Application {
     }
 
     /**
-     * Retourne un String qui contient le détail complet d'une évaluation si elle est de type "CompleteEvaluation". Retourne null s'il s'agit d'une BasicEvaluation
-     * @param eval L'évaluation à afficher
-     * @return Un String qui contient le détail complet d'une CompleteEvaluation, ou null s'il s'agit d'une BasicEvaluation
-     */
-    private static String getCompleteEvaluationDescription(Evaluation eval) {
-        StringBuilder result = new StringBuilder();
-
-        if (eval instanceof CompleteEvaluation ce) {
-            result.append("Evaluation de : ").append(ce.getUsername()).append("\n");
-            result.append("Commentaire : ").append(ce.getComment()).append("\n");
-            for (Grade currentGrade : ce.getGrades()) {
-                result.append(currentGrade.getCriteria().getName()).append(" : ").append(currentGrade.getGrade()).append("/5").append("\n");
-            }
-        }
-
-        return result.toString();
-    }
-
-    /**
      * Affiche dans la console un ensemble d'actions réalisables sur le restaurant actuellement sélectionné !
      */
     private static void showRestaurantMenu() {
-        System.out.println("======================================================");
-        System.out.println("Que souhaitez-vous faire ?");
-        System.out.println("1. J'aime ce restaurant !");
-        System.out.println("2. Je n'aime pas ce restaurant !");
-        System.out.println("3. Faire une évaluation complète de ce restaurant !");
-        System.out.println("4. Éditer ce restaurant");
-        System.out.println("5. Éditer l'adresse du restaurant");
-        System.out.println("6. Supprimer ce restaurant");
-        System.out.println("0. Revenir au menu principal");
+        System.out.println(DOUBLE_LINE);
+        System.out.println("                    ACTIONS DISPONIBLES");
+        System.out.println(DOUBLE_LINE);
+        System.out.println();
+        System.out.println("  [1] 👍  J'aime ce restaurant !");
+        System.out.println("  [2] 👎  Je n'aime pas ce restaurant !");
+        System.out.println("  [3] ⭐  Faire une évaluation complète");
+        System.out.println("  [4] ✏️   Éditer ce restaurant");
+        System.out.println("  [5] 📍  Éditer l'adresse du restaurant");
+        System.out.println("  [6] 🗑️   Supprimer ce restaurant");
+        System.out.println();
+        System.out.println("  [0] ⬅️   Revenir au menu principal");
+        System.out.println();
+        System.out.println(SINGLE_LINE);
+        System.out.print("Votre choix : ");
     }
 
     /**
@@ -342,6 +461,7 @@ public class Application {
      * @param restaurant L'instance du restaurant sur lequel l'action doit être réalisée
      */
     private static void proceedRestaurantMenu(int choice, Restaurant restaurant) {
+        System.out.println();
         switch (choice) {
             case 1:
                 addBasicEvaluation(restaurant, true);
@@ -382,9 +502,9 @@ public class Application {
 
         if (eval != null) {
             restaurant.getEvaluations().add(eval);
-            System.out.println(Constants.Messages.SUCCESS_VOTE_RECORDED);
+            printSuccess(Constants.Messages.SUCCESS_VOTE_RECORDED);
         } else {
-            System.out.println(Constants.Messages.ERROR_VOTE_FAILED);
+            printError(Constants.Messages.ERROR_VOTE_FAILED);
         }
     }
 
@@ -392,41 +512,49 @@ public class Application {
      * Crée une évaluation complète pour le restaurant avec validation des notes
      */
     private static void evaluateRestaurant(Restaurant restaurant) {
-        System.out.println("Merci d'évaluer ce restaurant !");
-        System.out.println("Quel est votre nom d'utilisateur ? ");
+        printSectionHeader("Évaluation complète du restaurant");
+
+        System.out.print("Votre nom d'utilisateur : ");
         String username = readString();
-        System.out.println("Quel commentaire aimeriez-vous publier ?");
+        System.out.print("Votre commentaire : ");
         String comment = readString();
 
         Set<EvaluationCriteria> criterias = evaluationService.getAllEvaluationCriterias();
         Map<EvaluationCriteria, Integer> grades = new HashMap<>();
 
+        System.out.println();
         System.out.println(String.format(Constants.Messages.PROMPT_GRADE_RANGE,
                 Constants.Evaluation.MIN_GRADE,
                 Constants.Evaluation.MAX_GRADE));
+        System.out.println();
 
         for (EvaluationCriteria currentCriteria : criterias) {
-            System.out.println(currentCriteria.getName() + " : " + currentCriteria.getDescription());
+            System.out.printf("🔹 %s%n", currentCriteria.getName());
+            System.out.printf("   %s%n", currentCriteria.getDescription());
+            System.out.print("   Votre note : ");
+
             Integer note;
             do {
                 note = readInt();
                 if (note < Constants.Evaluation.MIN_GRADE || note > Constants.Evaluation.MAX_GRADE) {
-                    System.out.println(String.format("Note invalide ! Veuillez entrer une note entre %d et %d :",
+                    System.out.println(String.format("   ❌ Note invalide ! Veuillez entrer une note entre %d et %d :",
                             Constants.Evaluation.MIN_GRADE,
                             Constants.Evaluation.MAX_GRADE));
+                    System.out.print("   Votre note : ");
                 }
             } while (note < Constants.Evaluation.MIN_GRADE || note > Constants.Evaluation.MAX_GRADE);
 
             grades.put(currentCriteria, note);
+            System.out.println();
         }
 
         CompleteEvaluation eval = evaluationService.addCompleteEvaluation(restaurant, username, comment, grades);
 
         if (eval != null) {
             restaurant.getEvaluations().add(eval);
-            System.out.println(Constants.Messages.SUCCESS_EVALUATION_RECORDED);
+            printSuccess(Constants.Messages.SUCCESS_EVALUATION_RECORDED);
         } else {
-            System.out.println(Constants.Messages.ERROR_EVALUATION_FAILED);
+            printError(Constants.Messages.ERROR_EVALUATION_FAILED);
         }
     }
 
@@ -434,16 +562,16 @@ public class Application {
      * Force l'utilisateur à saisir à nouveau toutes les informations du restaurant
      */
     private static void editRestaurant(Restaurant restaurant) {
-        System.out.println("Edition d'un restaurant !");
+        printSectionHeader("Édition du restaurant");
 
-        System.out.println("Nouveau nom : ");
+        System.out.print("Nouveau nom : ");
         restaurant.setName(readString());
-        System.out.println("Nouvelle description : ");
+        System.out.print("Nouvelle description : ");
         restaurant.setDescription(readString());
-        System.out.println("Nouveau site web : ");
+        System.out.print("Nouveau site web : ");
         restaurant.setWebsite(readString());
-        System.out.println("Nouveau type de restaurant : ");
 
+        System.out.println();
         RestaurantType newType = pickRestaurantType(restaurantService.getAllRestaurantTypes());
         if (newType != null) {
             restaurant.setType(newType);
@@ -452,9 +580,9 @@ public class Application {
         boolean success = restaurantService.updateRestaurant(restaurant);
 
         if (success) {
-            System.out.println("Merci, le restaurant a bien été modifié !");
+            printSuccess("Le restaurant a bien été modifié !");
         } else {
-            System.out.println("Erreur lors de la modification du restaurant.");
+            printError("Erreur lors de la modification du restaurant.");
         }
     }
 
@@ -462,11 +590,12 @@ public class Application {
      * Permet à l'utilisateur de mettre à jour l'adresse du restaurant
      */
     private static void editRestaurantAddress(Restaurant restaurant) {
-        System.out.println("Edition de l'adresse d'un restaurant !");
+        printSectionHeader("Édition de l'adresse");
 
-        System.out.println("Nouvelle rue : ");
+        System.out.print("Nouvelle rue : ");
         restaurant.getAddress().setStreet(readString());
 
+        System.out.println();
         City newCity = pickCity(restaurantService.getAllCities());
         if (newCity != null) {
             restaurant.getAddress().setCity(newCity);
@@ -475,9 +604,9 @@ public class Application {
         boolean success = restaurantService.updateRestaurant(restaurant);
 
         if (success) {
-            System.out.println("L'adresse a bien été modifiée ! Merci !");
+            printSuccess("L'adresse a bien été modifiée !");
         } else {
-            System.out.println("Erreur lors de la modification de l'adresse.");
+            printError("Erreur lors de la modification de l'adresse.");
         }
     }
 
@@ -485,16 +614,21 @@ public class Application {
      * Après confirmation par l'utilisateur, supprime complètement le restaurant et toutes ses évaluations
      */
     private static void deleteRestaurant(Restaurant restaurant) {
-        System.out.println("Êtes-vous sûr de vouloir supprimer ce restaurant ? (O/n)");
+        printWarning("⚠️  ATTENTION : Cette action est irréversible !");
+        System.out.println();
+        System.out.print("Êtes-vous sûr de vouloir supprimer ce restaurant ? (O/n) : ");
         String choice = readString();
-        if (choice.equals("o") || choice.equals("O")) {
+
+        if (choice.equalsIgnoreCase("o") || choice.equalsIgnoreCase("O")) {
             boolean success = restaurantService.deleteRestaurant(restaurant);
 
             if (success) {
-                System.out.println("Le restaurant a bien été supprimé !");
+                printSuccess("Le restaurant a bien été supprimé !");
             } else {
-                System.out.println("Erreur lors de la suppression du restaurant.");
+                printError("Erreur lors de la suppression du restaurant.");
             }
+        } else {
+            System.out.println("Suppression annulée.");
         }
     }
 
@@ -507,6 +641,7 @@ public class Application {
                 return current;
             }
         }
+        printWarning("Aucun restaurant trouvé avec ce nom.");
         return null;
     }
 
@@ -519,6 +654,7 @@ public class Application {
                 return current;
             }
         }
+        printWarning("Aucune ville trouvée avec ce NPA.");
         return null;
     }
 
@@ -531,8 +667,55 @@ public class Application {
                 return current;
             }
         }
+        printWarning("Aucun type trouvé avec ce libellé.");
         return null;
     }
+
+    // ========================================================================
+    // MÉTHODES UTILITAIRES POUR L'AFFICHAGE
+    // ========================================================================
+
+    /**
+     * Affiche un en-tête de section
+     */
+    private static void printSectionHeader(String title) {
+        System.out.println();
+        System.out.println(DOUBLE_LINE);
+        System.out.printf("  %s%n", title.toUpperCase());
+        System.out.println(DOUBLE_LINE);
+        System.out.println();
+    }
+
+    /**
+     * Affiche un message de succès
+     */
+    private static void printSuccess(String message) {
+        System.out.println();
+        System.out.println("✅ " + message);
+        System.out.println();
+    }
+
+    /**
+     * Affiche un message d'erreur
+     */
+    private static void printError(String message) {
+        System.out.println();
+        System.out.println("❌ " + message);
+        System.out.println();
+    }
+
+    /**
+     * Affiche un message d'avertissement
+     */
+    private static void printWarning(String message) {
+        System.out.println();
+        System.out.println("⚠️  " + message);
+        System.out.println();
+    }
+
+    // ========================================================================
+    // MÉTHODES DE LECTURE UTILISATEUR
+    // ========================================================================
 
     /**
      * readInt ne repositionne pas le scanner au début d'une ligne
@@ -545,7 +728,7 @@ public class Application {
                 i = scanner.nextInt();
                 success = true;
             } catch (InputMismatchException e) {
-                System.out.println(Constants.Messages.ERROR_MUST_BE_INTEGER);
+                printError(Constants.Messages.ERROR_MUST_BE_INTEGER);
             } finally {
                 scanner.nextLine();
             }
