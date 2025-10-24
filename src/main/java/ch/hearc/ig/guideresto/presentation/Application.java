@@ -2,6 +2,7 @@ package ch.hearc.ig.guideresto.presentation;
 
 import ch.hearc.ig.guideresto.business.*;
 import ch.hearc.ig.guideresto.persistence.*;
+import ch.hearc.ig.guideresto.service.EvaluationService;
 import ch.hearc.ig.guideresto.service.RestaurantService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,13 +14,14 @@ import java.util.*;
 /**
  * @author cedric.baudet
  * @author alain.matile
- * VERSION SERVICE LAYER - Utilise RestaurantService au lieu des Mappers
+ * VERSION SERVICE LAYER - Utilise RestaurantService et EvaluationService
  */
 public class Application {
 
     private static Scanner scanner;
     private static final Logger logger = LogManager.getLogger(Application.class);
     private static final RestaurantService restaurantService = RestaurantService.getInstance();
+    private static final EvaluationService evaluationService = EvaluationService.getInstance();
 
     public static void main(String[] args) {
         scanner = new Scanner(System.in);
@@ -77,7 +79,7 @@ public class Application {
                 System.out.println("Au revoir !");
                 break;
             default:
-                System.out.println("Erreur : saisie incorrecte. Veuillez réessayer");
+                System.out.println(Constants.Messages.ERROR_INVALID_INPUT);
                 break;
         }
     }
@@ -373,21 +375,21 @@ public class Application {
             ipAddress = Inet4Address.getLocalHost().toString();
         } catch (UnknownHostException ex) {
             logger.error("Error - Couldn't retrieve host IP address");
-            ipAddress = "Indisponible";
+            ipAddress = Constants.Evaluation.IP_UNAVAILABLE;
         }
 
-        BasicEvaluation eval = restaurantService.addBasicEvaluation(restaurant, like, ipAddress);
+        BasicEvaluation eval = evaluationService.addBasicEvaluation(restaurant, like, ipAddress);
 
         if (eval != null) {
             restaurant.getEvaluations().add(eval);
-            System.out.println("Votre vote a été pris en compte !");
+            System.out.println(Constants.Messages.SUCCESS_VOTE_RECORDED);
         } else {
-            System.out.println("Erreur lors de l'enregistrement du vote.");
+            System.out.println(Constants.Messages.ERROR_VOTE_FAILED);
         }
     }
 
     /**
-     * Crée une évaluation complète pour le restaurant
+     * Crée une évaluation complète pour le restaurant avec validation des notes
      */
     private static void evaluateRestaurant(Restaurant restaurant) {
         System.out.println("Merci d'évaluer ce restaurant !");
@@ -396,25 +398,35 @@ public class Application {
         System.out.println("Quel commentaire aimeriez-vous publier ?");
         String comment = readString();
 
-        Set<EvaluationCriteria> criterias = restaurantService.getAllEvaluationCriterias();
-
+        Set<EvaluationCriteria> criterias = evaluationService.getAllEvaluationCriterias();
         Map<EvaluationCriteria, Integer> grades = new HashMap<>();
 
-        System.out.println("Veuillez svp donner une note entre 1 et 5 pour chacun de ces critères : ");
+        System.out.println(String.format(Constants.Messages.PROMPT_GRADE_RANGE,
+                Constants.Evaluation.MIN_GRADE,
+                Constants.Evaluation.MAX_GRADE));
 
         for (EvaluationCriteria currentCriteria : criterias) {
             System.out.println(currentCriteria.getName() + " : " + currentCriteria.getDescription());
-            Integer note = readInt();
+            Integer note;
+            do {
+                note = readInt();
+                if (note < Constants.Evaluation.MIN_GRADE || note > Constants.Evaluation.MAX_GRADE) {
+                    System.out.println(String.format("Note invalide ! Veuillez entrer une note entre %d et %d :",
+                            Constants.Evaluation.MIN_GRADE,
+                            Constants.Evaluation.MAX_GRADE));
+                }
+            } while (note < Constants.Evaluation.MIN_GRADE || note > Constants.Evaluation.MAX_GRADE);
+
             grades.put(currentCriteria, note);
         }
 
-        CompleteEvaluation eval = restaurantService.addCompleteEvaluation(restaurant, username, comment, grades);
+        CompleteEvaluation eval = evaluationService.addCompleteEvaluation(restaurant, username, comment, grades);
 
         if (eval != null) {
             restaurant.getEvaluations().add(eval);
-            System.out.println("Votre évaluation a bien été enregistrée, merci !");
+            System.out.println(Constants.Messages.SUCCESS_EVALUATION_RECORDED);
         } else {
-            System.out.println("Erreur lors de l'enregistrement de l'évaluation.");
+            System.out.println(Constants.Messages.ERROR_EVALUATION_FAILED);
         }
     }
 
@@ -533,7 +545,7 @@ public class Application {
                 i = scanner.nextInt();
                 success = true;
             } catch (InputMismatchException e) {
-                System.out.println("Erreur ! Veuillez entrer un nombre entier s'il vous plaît !");
+                System.out.println(Constants.Messages.ERROR_MUST_BE_INTEGER);
             } finally {
                 scanner.nextLine();
             }
