@@ -2,6 +2,7 @@ package ch.hearc.ig.guideresto.persistence;
 
 import ch.hearc.ig.guideresto.business.EvaluationCriteria;
 import ch.hearc.ig.guideresto.business.Grade;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -50,7 +51,8 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return grade;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la création de la note: {}", ex.getMessage());
+            throw new DatabaseOperationException("CREATE Grade", ex);
         }
         return null;
     }
@@ -67,6 +69,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche de la note {}: {}", id, ex.getMessage());
+            throw new DatabaseOperationException("FIND Grade by ID", ex);
         }
         return null;
     }
@@ -85,6 +88,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
             logger.info("{} notes chargées", grades.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des notes: {}", ex.getMessage());
+            throw new DatabaseOperationException("FIND ALL Grades", ex);
         }
         return grades;
     }
@@ -103,6 +107,7 @@ public class GradeMapper extends AbstractMapper<Grade> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche des notes pour l'évaluation {}: {}", evaluationId, ex.getMessage());
+            throw new DatabaseOperationException("FIND Grades by Evaluation", ex);
         }
         return grades;
     }
@@ -126,7 +131,8 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la mise à jour de la note: {}", ex.getMessage());
+            throw new DatabaseOperationException("UPDATE Grade", ex);
         }
         return false;
     }
@@ -148,7 +154,8 @@ public class GradeMapper extends AbstractMapper<Grade> {
                 return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la suppression de la note: {}", ex.getMessage());
+            throw new DatabaseOperationException("DELETE Grade", ex);
         }
         return false;
     }
@@ -157,17 +164,18 @@ public class GradeMapper extends AbstractMapper<Grade> {
         Connection connection = ConnectionUtils.getConnection();
         try {
             Set<Grade> gradesToDelete = findByEvaluationId(evaluationId);
-        try (PreparedStatement stmt = connection.prepareStatement(DELETE_BY_EVALUATION)) {
-            stmt.setInt(1, evaluationId);
-            int rowsAffected = stmt.executeUpdate();
-            for (Grade grade : gradesToDelete) {
-                removeFromCache(grade.getId());
-            }
-            logger.info("{} notes supprimées pour l'évaluation {}", rowsAffected, evaluationId);
-            return true;
+            try (PreparedStatement stmt = connection.prepareStatement(DELETE_BY_EVALUATION)) {
+                stmt.setInt(1, evaluationId);
+                int rowsAffected = stmt.executeUpdate();
+                for (Grade grade : gradesToDelete) {
+                    removeFromCache(grade.getId());
+                }
+                logger.info("{} notes supprimées pour l'évaluation {}", rowsAffected, evaluationId);
+                return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la suppression des notes pour l'évaluation {}: {}", evaluationId, ex.getMessage());
+            throw new DatabaseOperationException("DELETE Grades by Evaluation", ex);
         }
     }
 

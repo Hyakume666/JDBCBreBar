@@ -1,6 +1,7 @@
 package ch.hearc.ig.guideresto.persistence;
 
 import ch.hearc.ig.guideresto.business.City;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -47,7 +48,7 @@ public class CityMapper extends AbstractMapper<City> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la création de la ville: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("CREATE City", ex);
         }
         return null;
     }
@@ -64,6 +65,7 @@ public class CityMapper extends AbstractMapper<City> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche de la ville {}: {}", id, ex.getMessage());
+            throw new DatabaseOperationException("FIND City by ID", ex);
         }
         return null;
     }
@@ -82,6 +84,7 @@ public class CityMapper extends AbstractMapper<City> {
             logger.info("{} villes chargées depuis la base", cities.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des villes: {}", ex.getMessage());
+            throw new DatabaseOperationException("FIND ALL Cities", ex);
         }
         return cities;
     }
@@ -105,7 +108,7 @@ public class CityMapper extends AbstractMapper<City> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la mise à jour de la ville: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("UPDATE City", ex);
         }
         return false;
     }
@@ -128,7 +131,7 @@ public class CityMapper extends AbstractMapper<City> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la suppression de la ville: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("DELETE City", ex);
         }
         return false;
     }

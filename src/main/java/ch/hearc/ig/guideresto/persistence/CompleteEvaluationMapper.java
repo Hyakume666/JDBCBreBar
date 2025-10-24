@@ -3,6 +3,7 @@ package ch.hearc.ig.guideresto.persistence;
 import ch.hearc.ig.guideresto.business.CompleteEvaluation;
 import ch.hearc.ig.guideresto.business.Grade;
 import ch.hearc.ig.guideresto.business.Restaurant;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -51,7 +52,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
 
         } catch (SQLException ex) {
             logger.error("Erreur lors de la création de l'évaluation complète: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("CREATE CompleteEvaluation", ex);
         }
         return null;
     }
@@ -68,6 +69,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche de l'évaluation complète {}: {}", id, ex.getMessage());
+            throw new DatabaseOperationException("FIND CompleteEvaluation by ID", ex);
         }
         return null;
     }
@@ -86,7 +88,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             logger.info("{} évaluations complètes chargées", evaluations.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des évaluations complètes: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("FIND ALL CompleteEvaluations", ex);
         }
         return evaluations;
     }
@@ -107,7 +109,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche des évaluations pour le restaurant {}: {}", restaurantId, ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("FIND CompleteEvaluations by Restaurant", ex);
         }
         return evaluations;
     }
@@ -137,7 +139,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la mise à jour de l'évaluation complète: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("UPDATE CompleteEvaluation", ex);
         }
         return false;
     }
@@ -163,7 +165,7 @@ public class CompleteEvaluationMapper extends AbstractMapper<CompleteEvaluation>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la suppression de l'évaluation complète: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("DELETE CompleteEvaluation", ex);
         }
         return false;
     }

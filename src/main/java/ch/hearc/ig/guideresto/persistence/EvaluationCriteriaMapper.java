@@ -1,6 +1,7 @@
 package ch.hearc.ig.guideresto.persistence;
 
 import ch.hearc.ig.guideresto.business.EvaluationCriteria;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -51,7 +52,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la création du critère: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("CREATE EvaluationCriteria", ex);
         }
         return null;
     }
@@ -68,6 +69,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche du critère {}: {}", id, ex.getMessage());
+            throw new DatabaseOperationException("FIND EvaluationCriteria by ID", ex);
         }
         return null;
     }
@@ -86,6 +88,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             logger.info("{} critères d'évaluation chargés", criterias.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des critères: {}", ex.getMessage());
+            throw new DatabaseOperationException("FIND ALL EvaluationCriterias", ex);
         }
         return criterias;
     }
@@ -113,7 +116,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la mise à jour du critère: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("UPDATE EvaluationCriteria", ex);
         }
         return false;
     }
@@ -136,7 +139,7 @@ public class EvaluationCriteriaMapper extends AbstractMapper<EvaluationCriteria>
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la suppression du critère: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("DELETE EvaluationCriteria", ex);
         }
         return false;
     }

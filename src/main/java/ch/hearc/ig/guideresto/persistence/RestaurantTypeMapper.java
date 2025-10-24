@@ -1,6 +1,7 @@
 package ch.hearc.ig.guideresto.persistence;
 
 import ch.hearc.ig.guideresto.business.RestaurantType;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -50,7 +51,8 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
                 return type;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la création du type: {}", ex.getMessage());
+            throw new DatabaseOperationException("CREATE RestaurantType", ex);
         }
         return null;
     }
@@ -67,6 +69,7 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche du type {}: {}", id, ex.getMessage());
+            throw new DatabaseOperationException("FIND RestaurantType by ID", ex);
         }
         return null;
     }
@@ -85,6 +88,7 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
             logger.info("{} types de restaurants chargés", types.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des types: {}", ex.getMessage());
+            throw new DatabaseOperationException("FIND ALL RestaurantTypes", ex);
         }
         return types;
     }
@@ -111,7 +115,8 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
                 return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la mise à jour du type: {}", ex.getMessage());
+            throw new DatabaseOperationException("UPDATE RestaurantType", ex);
         }
         return false;
     }
@@ -133,7 +138,8 @@ public class RestaurantTypeMapper extends AbstractMapper<RestaurantType> {
                 return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la suppression du type: {}", ex.getMessage());
+            throw new DatabaseOperationException("DELETE RestaurantType", ex);
         }
         return false;
     }

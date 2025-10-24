@@ -2,6 +2,7 @@ package ch.hearc.ig.guideresto.persistence;
 
 import ch.hearc.ig.guideresto.business.BasicEvaluation;
 import ch.hearc.ig.guideresto.business.Restaurant;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -51,7 +52,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la création de l'évaluation basique: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("CREATE BasicEvaluation", ex);
         }
         return null;
     }
@@ -68,7 +69,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche de l'évaluation basique {}: {}", id, ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("FIND BasicEvaluation by ID", ex);
         }
         return null;
     }
@@ -87,6 +88,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             logger.info("{} évaluations basiques chargées", evaluations.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des évaluations basiques: {}", ex.getMessage());
+            throw new DatabaseOperationException("FIND ALL BasicEvaluations", ex);
         }
         return evaluations;
     }
@@ -105,6 +107,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche des évaluations pour le restaurant {}: {}", restaurantId, ex.getMessage());
+            throw new DatabaseOperationException("FIND BasicEvaluations by Restaurant", ex);
         }
         return evaluations;
     }
@@ -130,7 +133,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la mise à jour de l'évaluation basique: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("UPDATE BasicEvaluation", ex);
         }
         return false;
     }
@@ -153,7 +156,7 @@ public class BasicEvaluationMapper extends AbstractMapper<BasicEvaluation> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la suppression de l'évaluation basique: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("DELETE BasicEvaluation", ex);
         }
         return false;
     }

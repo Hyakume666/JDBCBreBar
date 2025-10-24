@@ -4,6 +4,7 @@ import ch.hearc.ig.guideresto.business.City;
 import ch.hearc.ig.guideresto.business.Localisation;
 import ch.hearc.ig.guideresto.business.Restaurant;
 import ch.hearc.ig.guideresto.business.RestaurantType;
+import ch.hearc.ig.guideresto.persistence.exceptions.DatabaseOperationException;
 
 import java.sql.*;
 import java.util.HashSet;
@@ -50,7 +51,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la création du restaurant: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("CREATE Restaurant", ex);
         }
         return null;
     }
@@ -67,7 +68,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche du restaurant {}: {}", id, ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("FIND Restaurant by ID", ex);
         }
         return null;
     }
@@ -86,7 +87,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             logger.info("{} restaurants chargés", restaurants.size());
         } catch (SQLException ex) {
             logger.error("Erreur lors du chargement des restaurants: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("FIND ALL Restaurants", ex);
         }
         return restaurants;
     }
@@ -108,7 +109,8 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
                 return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la mise à jour du restaurant: {}", ex.getMessage());
+            throw new DatabaseOperationException("UPDATE Restaurant", ex);
         }
 
         return false;
@@ -131,7 +133,8 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
                 return true;
             }
         } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            logger.error("Erreur lors de la suppression du restaurant: {}", ex.getMessage());
+            throw new DatabaseOperationException("DELETE Restaurant", ex);
         }
         return false;
     }
@@ -158,7 +161,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche par nom: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("SEARCH Restaurant by name", ex);
         }
         return restaurants;
     }
@@ -196,7 +199,7 @@ public class RestaurantMapper extends AbstractMapper<Restaurant> {
             }
         } catch (SQLException ex) {
             logger.error("Erreur lors de la recherche par type: {}", ex.getMessage());
-            throw new RuntimeException(ex);
+            throw new DatabaseOperationException("SEARCH Restaurant by type", ex);
         }
         return restaurants;
     }
