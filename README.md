@@ -1,140 +1,132 @@
-# GuideResto - Persistance JDBC
+# Guide Resto
 
-Application Java démontrant l'implémentation de la **persistance de données** avec JDBC et les patterns de conception classiques.
+Application de gestion et d'évaluation de restaurants développée en Java avec Oracle Database.
 
-## Objectif
+## Description
 
-Maîtriser la persistance objet-relationnelle en Java :
-- Mapping objet-relationnel manuel (sans ORM)
-- Patterns de persistance professionnels
-- Gestion des transactions ACID
-- Optimisation des performances
-
-## Stack technique
-
-- **Java 21** + **JDBC**
-- **Oracle Database** (Sequences + Triggers)
-- **Maven** pour les dépendances
-- **Log4j2** pour la traçabilité
+Système permettant de :
+- Gérer des restaurants (CRUD complet)
+- Évaluer les restaurants (votes simples + avis détaillés)
+- Rechercher des restaurants (par nom, ville, type de cuisine)
+- Consulter les statistiques et moyennes des évaluations
 
 ## Architecture
+
+### Architecture 3 couches
 ```
-Business Layer (Entités)
-         ↓
-Service Layer (Logique métier + Transactions)
-         ↓
-Persistence Layer (Mappers + Cache)
-         ↓
-Oracle Database
-```
-
-### Composants clés
-
-- **AbstractMapper\<T\>** : Classe générique avec cache (Identity Map)
-- **Mappers concrets** : RestaurantMapper, CityMapper, EvaluationMapper...
-- **ConnectionUtils** : Gestion de la connexion unique
-- **PersistenceHelper** : Opérations complexes multi-mappers
-
-## Patterns implémentés
-
-### 1. Data Mapper
-Séparation totale entre objets métier et logique SQL.
-```java
-Restaurant r = RestaurantMapper.getInstance().findById(1);
+┌─────────────────────────────────────┐
+│   Présentation (Application.java)   │  ← Interface console
+├─────────────────────────────────────┤
+│   Service (Business Logic)          │  ← RestaurantService, EvaluationService
+│   - Gestion des transactions        │
+│   - Validation métier                │
+├─────────────────────────────────────┤
+│   Persistance (Data Access)         │  ← Mappers (AbstractMapper + 8 implémentations)
+│   - Mappers avec cache Identity Map │
+│   - Gestion connexion Oracle        │
+└─────────────────────────────────────┘
+        ↓
+┌─────────────────────────────────────┐
+│   Oracle Database                   │
+└─────────────────────────────────────┘
 ```
 
-### 2. Identity Map (Cache)
-Évite les requêtes redondantes.
-```java
-// 1ère fois : requête SQL
-Restaurant r1 = RestaurantMapper.getInstance().findById(1);
-
-// 2ème fois : cache hit
-Restaurant r2 = RestaurantMapper.getInstance().findById(1);
-// r1 == r2 → true
+### Packages
+```
+ch.hearc.ig.guideresto
+├── business/              # Entités métier
+│   ├── Restaurant.java
+│   ├── Evaluation.java (BasicEvaluation, CompleteEvaluation)
+│   ├── City.java
+│   ├── Grade.java
+│   ├── Constants.java     # Constantes métier centralisées
+│   └── Validator.java     # Validation centralisée
+├── service/               # Logique métier
+│   ├── RestaurantService.java
+│   └── EvaluationService.java
+├── persistence/           # Accès aux données
+│   ├── AbstractMapper.java
+│   ├── *Mapper.java (8 implémentations)
+│   ├── PersistenceHelper.java
+│   ├── ConnectionUtils.java
+│   └── exceptions/
+│       ├── PersistenceException.java
+│       ├── DatabaseOperationException.java
+│       └── EntityNotFoundException.java
+└── presentation/          # Interface utilisateur
+    └── Application.java
 ```
 
-### 3. Unit of Work
-Gestion transactionnelle complète.
-```java
-try {
-    Restaurant created = RestaurantMapper.getInstance().create(restaurant);
-    connection.commit();  // Succès
-} catch (Exception ex) {
-    connection.rollback();  // Annulation
-}
+## Fonctionnalités principales
+
+### Gestion des restaurants
+- Créer, modifier, supprimer des restaurants
+- Recherche par nom, ville, type de cuisine
+- Affichage avec évaluations et statistiques
+
+### Système d'évaluation double
+- **Évaluation basique** : Vote simple (like/dislike) avec IP
+- **Évaluation complète** : Commentaire + notes détaillées par critères (service, cuisine, cadre)
+
+### Recherche et filtrage
+- Par nom de restaurant (recherche partielle)
+- Par ville
+- Par type de cuisine
+
+## Technologies
+
+- **Langage** : Java
+- **Base de données** : Oracle Database 19c
+- **Build** : Maven
+- **Logging** : Log4j2
+- **JDBC** : ojdbc11
+
+
+### Schéma Oracle
+
+Le projet utilise les tables suivantes :
+- `RESTAURANTS` - Données des restaurants
+- `VILLES` - Liste des villes
+- `TYPES_GASTRONOMIQUES` - Types de cuisine
+- `LIKES` - Évaluations basiques (like/dislike)
+- `COMMENTAIRES` - Évaluations complètes
+- `NOTES` - Notes détaillées par critère
+- `CRITERES_EVALUATIONS` - Critères d'évaluation
+
+
+## Documentation
+
+Le projet inclut une **JavaDoc complète**
+
+
+## Patterns de conception utilisés
+
+- **Singleton** : Services, Mappers, ConnectionUtils
+- **Data Mapper** : AbstractMapper et implémentations concrètes
+- **Identity Map** : Cache dans AbstractMapper pour éviter requêtes redondantes
+- **Facade** : PersistenceHelper simplifie opérations complexes
+- **Template Method** : Hiérarchie Evaluation (BasicEvaluation, CompleteEvaluation)
+- **Exception Hierarchy** : Gestion d'erreurs structurée
+
+## Structure de la base de données
+
+### Relations principales
+```
+RESTAURANTS (1) ──< (N) LIKES
+            (1) ──< (N) COMMENTAIRES
+                        (1) ──< (N) NOTES
+
+VILLES (1) ──< (N) RESTAURANTS
+TYPES_GASTRONOMIQUES (1) ──< (N) RESTAURANTS
+CRITERES_EVALUATIONS (1) ──< (N) NOTES
 ```
 
-### 4. Singleton
-Une instance par Mapper pour partager le cache.
-```java
-RestaurantMapper.getInstance()
-```
+## Auteurs
 
-### 5. Lazy Loading
-Chargement des relations à la demande.
-```java
-// Sans relations
-Restaurant r = RestaurantMapper.getInstance().findById(1);
+- **Code de base** : Cédric Baudet, Alain Matile, Arnaud Geiser
+- **Améliorations (Architecture 3 couches, Services, JavaDoc)** : Jérémie Bressoud & Loïc Barthoulot
 
-// Avec relations
-Restaurant r = PersistenceHelper.loadRestaurantWithEvaluations(1);
-```
+---
 
-## Modèle de données
-```
-RESTAURANTS (1) ──→ (N) COMMENTAIRES (CompleteEvaluation)
-                         └─→ (N) NOTES (Grade)
-                                  └─→ (1) CRITERES_EVALUATION
-
-RESTAURANTS (1) ──→ (N) LIKES (BasicEvaluation)
-
-RESTAURANTS (N) ──→ (1) VILLES
-RESTAURANTS (N) ──→ (1) TYPES_GASTRONOMIQUES
-```
-
-## Installation
-
-### 1. Créer la base de données
-```bash
-sqlplus user/password@db @GuideResto_CREATE_TABLES.sql
-```
-
-### 2. Configurer la connexion
-
-Créer `src/main/resources/database.properties` :
-```properties
-database.url=jdbc:oracle:thin:@localhost:1521:XE
-database.username=votre_user
-database.password=votre_password
-```
-
-### 3. Compiler et lancer
-```bash
-mvn clean install
-mvn exec:java -Dexec.mainClass="ch.hearc.ig.guideresto.presentation.Application"
-```
-
-## Structure
-```
-persistence/
-├── AbstractMapper.java              # Générique + Cache
-├── ConnectionUtils.java             # Connexion unique
-├── PersistenceHelper.java           # Opérations complexes
-├── RestaurantMapper.java
-├── CityMapper.java
-├── RestaurantTypeMapper.java
-├── BasicEvaluationMapper.java
-├── CompleteEvaluationMapper.java
-├── GradeMapper.java
-└── EvaluationCriteriaMapper.java
-```
-
-## Concepts démontrés
-
-**Data Mapper Pattern** - Séparation objet/SQL  
-**Identity Map** - Cache par entité  
-**Unit of Work** - Transactions ACID  
-**Lazy Loading** - Optimisation chargement  
-**PreparedStatement** - Sécurité SQL  
-**Singleton** - Instance unique
+**Version** : 2.0  
+**Date de mise à jour** : 25 Octobre 2025
