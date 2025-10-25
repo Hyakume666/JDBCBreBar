@@ -35,25 +35,26 @@ Système permettant de :
 ```
 ch.hearc.ig.guideresto
 ├── business/              # Entités métier
-│   ├── Restaurant.java
-│   ├── Evaluation.java (BasicEvaluation, CompleteEvaluation)
-│   ├── City.java
-│   ├── Grade.java
-│   ├── Constants.java     # Constantes métier centralisées
-│   └── Validator.java     # Validation centralisée
+│   ├── Restaurant, City, RestaurantType
+│   ├── Evaluation (abstract), BasicEvaluation, CompleteEvaluation
+│   ├── Grade, EvaluationCriteria, Localisation
+│   ├── Constants.java (3 domaines : Evaluation, UI, Messages)
+│   └── IBusinessObject.java
 ├── service/               # Logique métier
 │   ├── RestaurantService.java
 │   └── EvaluationService.java
 ├── persistence/           # Accès aux données
-│   ├── AbstractMapper.java
-│   ├── *Mapper.java (8 implémentations)
-│   ├── PersistenceHelper.java
-│   ├── ConnectionUtils.java
+│   ├── AbstractMapper.java (générique avec Identity Map)
+│   ├── RestaurantMapper, CityMapper, RestaurantTypeMapper
+│   ├── BasicEvaluationMapper, CompleteEvaluationMapper
+│   ├── GradeMapper, EvaluationCriteriaMapper
+│   ├── PersistenceHelper.java (Facade)
+│   ├── ConnectionUtils.java (Singleton)
 │   └── exceptions/
 │       ├── PersistenceException.java
 │       ├── DatabaseOperationException.java
 │       └── EntityNotFoundException.java
-└── presentation/          # Interface utilisateur
+└── presentation/          # Interface console
     └── Application.java
 ```
 
@@ -81,6 +82,24 @@ ch.hearc.ig.guideresto
 - **Logging** : Log4j2
 - **JDBC** : ojdbc11
 
+## Bonnes pratiques appliquées
+
+### Principe DRY (Don't Repeat Yourself)
+- **Centralisation des constantes** : Tous les messages utilisateur, éléments UI et règles métier sont regroupés dans `Constants.java`
+- **Organisation par domaine** : Les constantes sont structurées en 3 classes internes :
+    - `Evaluation` : Règles métier (MIN_GRADE, MAX_GRADE, IP_UNAVAILABLE)
+    - `UI` : Éléments visuels (séparateurs, emojis Unicode)
+    - `Messages` : Tous les messages utilisateur (erreurs, succès, infos, prompts)
+
+### Gestion des ressources
+- **Try-finally** : Fermeture garantie du Scanner et de la connexion DB
+- **Logging** : Traçabilité de la fermeture des ressources
+- **Prévention des fuites** : Pas de fuite mémoire ou de ressources système
+
+### Documentation
+- **JavaDoc complète** : Toutes les couches Service et Persistance documentées
+- **Standards Oracle** : Respect des conventions JavaDoc officielles
+- **Exemples d'utilisation** : Documentation pratique pour les développeurs
 
 ### Schéma Oracle
 
@@ -92,12 +111,6 @@ Le projet utilise les tables suivantes :
 - `COMMENTAIRES` - Évaluations complètes
 - `NOTES` - Notes détaillées par critère
 - `CRITERES_EVALUATIONS` - Critères d'évaluation
-
-
-## Documentation
-
-Le projet inclut une **JavaDoc complète**
-
 
 ## Patterns de conception utilisés
 
@@ -130,3 +143,4 @@ CRITERES_EVALUATIONS (1) ──< (N) NOTES
 
 **Version** : 2.0  
 **Date de mise à jour** : 25 Octobre 2025
+```
