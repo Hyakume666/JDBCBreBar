@@ -23,27 +23,37 @@ public class Application {
     private static final RestaurantService restaurantService = RestaurantService.getInstance();
     private static final EvaluationService evaluationService = EvaluationService.getInstance();
 
-    // Constantes pour l'affichage
-    private static final String DOUBLE_LINE = "══════════════════════════════════════════════════════════════";
-    private static final String SINGLE_LINE = "──────────────────────────────────────────────────────────────";
-    private static final String STAR_LINE = "**************************************************************";
+    // Constantes pour l'affichage - Utilisation des constantes centralisées
+    private static final String DOUBLE_LINE = Constants.UI.DOUBLE_LINE;
+    private static final String SINGLE_LINE = Constants.UI.SINGLE_LINE;
+    private static final String STAR_LINE = Constants.UI.STAR_LINE;
 
     public static void main(String[] args) {
         scanner = new Scanner(System.in);
 
-        printWelcomeHeader();
+        try {
+            printWelcomeHeader();
 
-        int choice;
-        do {
-            printMainMenu();
-            choice = readInt();
-            proceedMainMenu(choice);
-        } while (choice != 0);
+            int choice;
+            do {
+                printMainMenu();
+                choice = readInt();
+                proceedMainMenu(choice);
+            } while (choice != 0);
 
-        printGoodbyeMessage();
+            printGoodbyeMessage();
 
-        // Fermer la connexion à la fin
-        ConnectionUtils.closeConnection();
+        } finally {
+            // Fermeture propre des ressources
+            if (scanner != null) {
+                scanner.close();
+                logger.debug("Scanner fermé");
+            }
+
+            // Fermer la connexion à la fin
+            ConnectionUtils.closeConnection();
+            logger.info("Application terminée proprement");
+        }
     }
 
     /**
@@ -134,7 +144,7 @@ public class Application {
      */
     private static Restaurant pickRestaurant(Set<Restaurant> restaurants) {
         if (restaurants.isEmpty()) {
-            printWarning("Aucun restaurant n'a été trouvé !");
+            printWarning(Constants.Messages.INFO_NO_RESTAURANT_FOUND);
             return null;
         }
 
@@ -188,11 +198,11 @@ public class Application {
      */
     private static void searchRestaurantByName() {
         printSectionHeader("Recherche par nom");
-        System.out.print("Entrez une partie du nom recherché : ");
+        System.out.print(Constants.Messages.PROMPT_ENTER_NAME_PART);
         String research = readString();
 
         if (research.isEmpty()) {
-            printWarning("Recherche annulée");
+            printWarning(Constants.Messages.INFO_SEARCH_CANCELLED);
             return;
         }
 
@@ -210,11 +220,11 @@ public class Application {
      */
     private static void searchRestaurantByCity() {
         printSectionHeader("Recherche par ville");
-        System.out.print("Entrez une partie du nom de la ville : ");
+        System.out.print(Constants.Messages.PROMPT_ENTER_CITY_PART);
         String research = readString();
 
         if (research.isEmpty()) {
-            printWarning("Recherche annulée");
+            printWarning(Constants.Messages.INFO_SEARCH_CANCELLED);
             return;
         }
 
@@ -259,7 +269,7 @@ public class Application {
             city = restaurantService.createCity(city);
 
             if (city != null) {
-                printSuccess("Ville créée avec succès !");
+                printSuccess(Constants.Messages.SUCCESS_CITY_CREATED);
             }
 
             return city;
@@ -338,11 +348,11 @@ public class Application {
         restaurant = restaurantService.createRestaurant(restaurant);
 
         if (restaurant != null) {
-            printSuccess("Restaurant créé avec succès !");
+            printSuccess(Constants.Messages.SUCCESS_RESTAURANT_CREATED);
             System.out.println();
             showRestaurant(restaurant);
         } else {
-            printError("Erreur lors de la création du restaurant.");
+            printError(Constants.Messages.ERROR_RESTAURANT_CREATE_FAILED);
         }
     }
 
@@ -523,9 +533,9 @@ public class Application {
         Map<EvaluationCriteria, Integer> grades = new HashMap<>();
 
         System.out.println();
-        System.out.println(String.format(Constants.Messages.PROMPT_GRADE_RANGE,
+        System.out.printf(Constants.Messages.PROMPT_GRADE_RANGE,
                 Constants.Evaluation.MIN_GRADE,
-                Constants.Evaluation.MAX_GRADE));
+                Constants.Evaluation.MAX_GRADE);
         System.out.println();
 
         for (EvaluationCriteria currentCriteria : criterias) {
@@ -537,9 +547,10 @@ public class Application {
             do {
                 note = readInt();
                 if (note < Constants.Evaluation.MIN_GRADE || note > Constants.Evaluation.MAX_GRADE) {
-                    System.out.println(String.format("   ❌ Note invalide ! Veuillez entrer une note entre %d et %d :",
+                    System.out.printf(Constants.Messages.ERROR_INVALID_GRADE,
                             Constants.Evaluation.MIN_GRADE,
-                            Constants.Evaluation.MAX_GRADE));
+                            Constants.Evaluation.MAX_GRADE);
+                    System.out.println();
                     System.out.print("   Votre note : ");
                 }
             } while (note < Constants.Evaluation.MIN_GRADE || note > Constants.Evaluation.MAX_GRADE);
@@ -580,9 +591,9 @@ public class Application {
         boolean success = restaurantService.updateRestaurant(restaurant);
 
         if (success) {
-            printSuccess("Le restaurant a bien été modifié !");
+            printSuccess(Constants.Messages.SUCCESS_RESTAURANT_UPDATED);
         } else {
-            printError("Erreur lors de la modification du restaurant.");
+            printError(Constants.Messages.ERROR_RESTAURANT_UPDATE_FAILED);
         }
     }
 
@@ -604,9 +615,9 @@ public class Application {
         boolean success = restaurantService.updateRestaurant(restaurant);
 
         if (success) {
-            printSuccess("L'adresse a bien été modifiée !");
+            printSuccess(Constants.Messages.SUCCESS_ADDRESS_UPDATED);
         } else {
-            printError("Erreur lors de la modification de l'adresse.");
+            printError(Constants.Messages.ERROR_ADDRESS_UPDATE_FAILED);
         }
     }
 
@@ -614,21 +625,21 @@ public class Application {
      * Après confirmation par l'utilisateur, supprime complètement le restaurant et toutes ses évaluations
      */
     private static void deleteRestaurant(Restaurant restaurant) {
-        printWarning("⚠️  ATTENTION : Cette action est irréversible !");
+        printWarning(Constants.Messages.WARNING_IRREVERSIBLE_ACTION);
         System.out.println();
-        System.out.print("Êtes-vous sûr de vouloir supprimer ce restaurant ? (O/n) : ");
+        System.out.print(Constants.Messages.PROMPT_DELETE_CONFIRM);
         String choice = readString();
 
         if (choice.equalsIgnoreCase("o") || choice.equalsIgnoreCase("O")) {
             boolean success = restaurantService.deleteRestaurant(restaurant);
 
             if (success) {
-                printSuccess("Le restaurant a bien été supprimé !");
+                printSuccess(Constants.Messages.SUCCESS_RESTAURANT_DELETED);
             } else {
-                printError("Erreur lors de la suppression du restaurant.");
+                printError(Constants.Messages.ERROR_RESTAURANT_DELETE_FAILED);
             }
         } else {
-            System.out.println("Suppression annulée.");
+            System.out.println(Constants.Messages.INFO_DELETE_CANCELLED);
         }
     }
 
@@ -641,7 +652,7 @@ public class Application {
                 return current;
             }
         }
-        printWarning("Aucun restaurant trouvé avec ce nom.");
+        printWarning(Constants.Messages.INFO_NO_RESTAURANT_WITH_NAME);
         return null;
     }
 
@@ -654,7 +665,7 @@ public class Application {
                 return current;
             }
         }
-        printWarning("Aucune ville trouvée avec ce NPA.");
+        printWarning(Constants.Messages.INFO_NO_CITY_WITH_ZIPCODE);
         return null;
     }
 
@@ -667,7 +678,7 @@ public class Application {
                 return current;
             }
         }
-        printWarning("Aucun type trouvé avec ce libellé.");
+        printWarning(Constants.Messages.INFO_NO_TYPE_WITH_LABEL);
         return null;
     }
 

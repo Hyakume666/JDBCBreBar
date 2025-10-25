@@ -20,6 +20,7 @@ package ch.hearc.ig.guideresto.business;
  * <pre>
  * Constants (classe racine)
  *     ├── Evaluation (constantes liées aux évaluations)
+ *     ├── UI (constantes pour l'interface utilisateur)
  *     └── Messages (messages utilisateur)
  * </pre>
  *
@@ -34,8 +35,8 @@ package ch.hearc.ig.guideresto.business;
  * // Affichage d'un message
  * System.out.println(Constants.Messages.SUCCESS_VOTE_RECORDED);
  *
- * // Récupération de l'IP par défaut
- * String ip = getIpAddress().orElse(Constants.Evaluation.IP_UNAVAILABLE);
+ * // Utilisation d'un séparateur
+ * System.out.println(Constants.UI.DOUBLE_LINE);
  * </pre>
  *
  * <p><b>Bonnes pratiques appliquées :</b></p>
@@ -47,33 +48,8 @@ package ch.hearc.ig.guideresto.business;
  *   <li>Classes internes statiques pour l'organisation</li>
  * </ul>
  *
- * <p><b>Extensions futures possibles :</b></p>
- * <pre>
- * public static final class Validation {
- *     public static final int MIN_NAME_LENGTH = 2;
- *     public static final int MAX_NAME_LENGTH = 100;
- *     public static final String ZIP_CODE_PATTERN = "^[0-9]{4}$";
- * }
- *
- * public static final class Database {
- *     public static final int CONNECTION_TIMEOUT = 30;
- *     public static final int MAX_RETRY_ATTEMPTS = 3;
- * }
- *
- * public static final class UI {
- *     public static final String DOUBLE_LINE = "══════...";
- *     public static final String SINGLE_LINE = "──────...";
- * }
- * </pre>
- *
- * <p><b>Pattern utilisé :</b> Constants Class avec Inner Classes</p>
- *
- * <p><b>Alternative considérée :</b> Utiliser des enums pour certaines constantes
- * (par exemple pour les types d'évaluations), mais les constantes primitives
- * sont plus simples et suffisantes pour ce projet.</p>
- *
  * @author Votre Nom
- * @version 1.0
+ * @version 2.0
  * @since 1.0
  */
 public final class Constants {
@@ -102,31 +78,6 @@ public final class Constants {
      *   <li>Si l'adresse IP est indisponible, utiliser IP_UNAVAILABLE</li>
      * </ul>
      *
-     * <p><b>Exemples d'utilisation :</b></p>
-     * <pre>
-     * // Validation d'une note
-     * public void validateGrade(int grade) {
-     *     if (grade &lt; Evaluation.MIN_GRADE || grade &gt; Evaluation.MAX_GRADE) {
-     *         throw new IllegalArgumentException(
-     *             String.format("La note doit être entre %d et %d",
-     *                 Evaluation.MIN_GRADE, Evaluation.MAX_GRADE)
-     *         );
-     *     }
-     * }
-     *
-     * // Affichage d'un prompt
-     * System.out.printf("Donnez une note entre %d et %d : ",
-     *                   Evaluation.MIN_GRADE, Evaluation.MAX_GRADE);
-     *
-     * // Gestion de l'IP indisponible
-     * String ip;
-     * try {
-     *     ip = InetAddress.getLocalHost().getHostAddress();
-     * } catch (UnknownHostException ex) {
-     *     ip = Evaluation.IP_UNAVAILABLE;
-     * }
-     * </pre>
-     *
      * @see ch.hearc.ig.guideresto.business.Grade
      * @see ch.hearc.ig.guideresto.business.BasicEvaluation
      * @see ch.hearc.ig.guideresto.service.EvaluationService
@@ -139,13 +90,6 @@ public final class Constants {
          * <p>Toute note inférieure à cette valeur est considérée comme invalide.</p>
          *
          * <p><b>Valeur :</b> 1 (sur une échelle de 1 à 5)</p>
-         *
-         * <p><b>Utilisé dans :</b></p>
-         * <ul>
-         *   <li>Validation des notes dans EvaluationService</li>
-         *   <li>Validation des notes dans Validator (si implémenté)</li>
-         *   <li>Messages d'erreur pour l'utilisateur</li>
-         * </ul>
          */
         public static final int MIN_GRADE = 1;
 
@@ -155,16 +99,6 @@ public final class Constants {
          * <p>Toute note supérieure à cette valeur est considérée comme invalide.</p>
          *
          * <p><b>Valeur :</b> 5 (sur une échelle de 1 à 5)</p>
-         *
-         * <p><b>Utilisé dans :</b></p>
-         * <ul>
-         *   <li>Validation des notes dans EvaluationService</li>
-         *   <li>Validation des notes dans Validator (si implémenté)</li>
-         *   <li>Messages d'erreur pour l'utilisateur</li>
-         * </ul>
-         *
-         * <p><b>Note :</b> Si l'échelle de notation change (par exemple 1-10),
-         * il suffit de modifier cette constante.</p>
          */
         public static final int MAX_GRADE = 5;
 
@@ -172,28 +106,94 @@ public final class Constants {
          * Valeur par défaut pour l'adresse IP lorsqu'elle ne peut pas être déterminée.
          *
          * <p>Cette constante est utilisée dans les évaluations basiques lorsque
-         * la récupération de l'adresse IP échoue (typiquement lors d'une
-         * {@link java.net.UnknownHostException}).</p>
+         * la récupération de l'adresse IP échoue.</p>
          *
          * <p><b>Valeur :</b> "Indisponible"</p>
-         *
-         * <p><b>Cas d'utilisation :</b></p>
-         * <pre>
-         * String ipAddress;
-         * try {
-         *     ipAddress = Inet4Address.getLocalHost().toString();
-         * } catch (UnknownHostException ex) {
-         *     logger.error("Impossible de récupérer l'adresse IP");
-         *     ipAddress = Constants.Evaluation.IP_UNAVAILABLE;
-         * }
-         * </pre>
-         *
-         * <p><b>Note :</b> Cette valeur sera stockée en base de données dans
-         * la table LIKES si l'IP ne peut pas être déterminée.</p>
-         *
-         * @see ch.hearc.ig.guideresto.business.BasicEvaluation#getIpAddress()
          */
         public static final String IP_UNAVAILABLE = "Indisponible";
+    }
+
+    /**
+     * Constantes pour l'interface utilisateur (séparateurs, symboles Unicode).
+     * Centralise tous les éléments visuels de l'application console.
+     *
+     * <p><b>Avantages de centraliser les éléments UI :</b></p>
+     * <ul>
+     *   <li>Cohérence visuelle dans toute l'application</li>
+     *   <li>Modification facile du thème visuel</li>
+     *   <li>Réutilisabilité des éléments graphiques</li>
+     * </ul>
+     *
+     * <p><b>Exemple d'utilisation :</b></p>
+     * <pre>
+     * System.out.println(Constants.UI.DOUBLE_LINE);
+     * System.out.println("       MENU PRINCIPAL");
+     * System.out.println(Constants.UI.DOUBLE_LINE);
+     * </pre>
+     *
+     * @see ch.hearc.ig.guideresto.presentation.Application
+     */
+    public static final class UI {
+
+        /**
+         * Ligne de séparation double pour les en-têtes principaux.
+         * Utilisée pour les titres de sections importantes.
+         *
+         * <p><b>Longueur :</b> 62 caractères</p>
+         */
+        public static final String DOUBLE_LINE = "══════════════════════════════════════════════════════════════";
+
+        /**
+         * Ligne de séparation simple pour les sous-sections.
+         * Utilisée pour séparer visuellement des blocs de contenu.
+         *
+         * <p><b>Longueur :</b> 62 caractères</p>
+         */
+        public static final String SINGLE_LINE = "──────────────────────────────────────────────────────────────";
+
+        /**
+         * Ligne d'étoiles pour les messages spéciaux (bienvenue, au revoir).
+         * Utilisée pour attirer l'attention sur des messages importants.
+         *
+         * <p><b>Longueur :</b> 62 caractères</p>
+         */
+        public static final String STAR_LINE = "**************************************************************";
+
+        /**
+         * Symbole Unicode pour représenter un restaurant.
+         * Utilisé dans les en-têtes et titres.
+         */
+        public static final String EMOJI_RESTAURANT = "🍽️";
+
+        /**
+         * Symbole Unicode pour indiquer une action réussie.
+         * Utilisé dans les messages de confirmation.
+         */
+        public static final String EMOJI_CHECK = "✅";
+
+        /**
+         * Symbole Unicode pour indiquer une erreur.
+         * Utilisé dans les messages d'erreur.
+         */
+        public static final String EMOJI_ERROR = "❌";
+
+        /**
+         * Symbole Unicode pour indiquer un avertissement.
+         * Utilisé dans les messages d'avertissement.
+         */
+        public static final String EMOJI_WARNING = "⚠️";
+
+        /**
+         * Symbole Unicode pour un "like" (pouce levé).
+         * Utilisé pour les évaluations positives.
+         */
+        public static final String EMOJI_LIKE = "👍";
+
+        /**
+         * Symbole Unicode pour un "dislike" (pouce baissé).
+         * Utilisé pour les évaluations négatives.
+         */
+        public static final String EMOJI_DISLIKE = "👎";
     }
 
     /**
@@ -205,7 +205,7 @@ public final class Constants {
      * <ul>
      *   <li><b>Messages d'erreur :</b> Préfixe ERROR_*</li>
      *   <li><b>Messages de succès :</b> Préfixe SUCCESS_*</li>
-     *   <li><b>Messages informatifs :</b> Préfixe PROMPT_* ou INFO_*</li>
+     *   <li><b>Messages informatifs :</b> Préfixe INFO_* ou PROMPT_*</li>
      * </ul>
      *
      * <p><b>Avantages de centraliser les messages :</b></p>
@@ -216,130 +216,155 @@ public final class Constants {
      *   <li><b>Réutilisabilité :</b> Même message utilisable partout</li>
      * </ul>
      *
-     * <p><b>Exemple d'utilisation :</b></p>
-     * <pre>
-     * // Affichage d'un message de succès
-     * if (evaluationCreated) {
-     *     System.out.println("✅ " + Messages.SUCCESS_EVALUATION_RECORDED);
-     * }
-     *
-     * // Affichage d'un message d'erreur
-     * try {
-     *     int number = scanner.nextInt();
-     * } catch (InputMismatchException e) {
-     *     System.out.println("❌ " + Messages.ERROR_MUST_BE_INTEGER);
-     * }
-     *
-     * // Message formaté avec paramètres
-     * System.out.printf(Messages.PROMPT_GRADE_RANGE,
-     *                   Evaluation.MIN_GRADE,
-     *                   Evaluation.MAX_GRADE);
-     * </pre>
-     *
-     * <p><b>Extension future pour l'internationalisation :</b></p>
-     * <pre>
-     * // Utiliser ResourceBundle pour les traductions
-     * ResourceBundle messages = ResourceBundle.getBundle("messages", locale);
-     * String message = messages.getString("error.invalid.input");
-     * </pre>
-     *
      * @see ch.hearc.ig.guideresto.presentation.Application
      */
     public static final class Messages {
 
+        // ========== Messages d'erreur ==========
+
         /**
          * Message d'erreur générique pour une saisie incorrecte.
-         * Utilisé lorsque l'utilisateur entre une valeur invalide (format, type, etc.).
-         *
-         * <p><b>Valeur :</b> "Erreur : saisie incorrecte. Veuillez réessayer"</p>
-         *
-         * <p><b>Cas d'utilisation :</b> Validation générale des entrées utilisateur</p>
          */
         public static final String ERROR_INVALID_INPUT = "Erreur : saisie incorrecte. Veuillez réessayer";
 
         /**
          * Message d'erreur spécifique lorsqu'un entier est attendu mais non fourni.
-         *
-         * <p><b>Valeur :</b> "Erreur ! Veuillez entrer un nombre entier s'il vous plaît !"</p>
-         *
-         * <p><b>Cas d'utilisation typique :</b></p>
-         * <pre>
-         * try {
-         *     int choice = scanner.nextInt();
-         * } catch (InputMismatchException e) {
-         *     System.out.println(Messages.ERROR_MUST_BE_INTEGER);
-         *     scanner.nextLine(); // Clear buffer
-         * }
-         * </pre>
          */
         public static final String ERROR_MUST_BE_INTEGER = "Erreur ! Veuillez entrer un nombre entier s'il vous plaît !";
 
         /**
-         * Message de succès après l'enregistrement d'un vote (like/dislike).
-         *
-         * <p><b>Valeur :</b> "Votre vote a été pris en compte !"</p>
-         *
-         * <p><b>Utilisé dans :</b></p>
-         * <ul>
-         *   <li>Application.addBasicEvaluation() après un vote réussi</li>
-         * </ul>
-         */
-        public static final String SUCCESS_VOTE_RECORDED = "Votre vote a été pris en compte !";
-
-        /**
-         * Message de succès après l'enregistrement d'une évaluation complète.
-         *
-         * <p><b>Valeur :</b> "Votre évaluation a bien été enregistrée, merci !"</p>
-         *
-         * <p><b>Utilisé dans :</b></p>
-         * <ul>
-         *   <li>Application.evaluateRestaurant() après une évaluation complète réussie</li>
-         * </ul>
-         */
-        public static final String SUCCESS_EVALUATION_RECORDED = "Votre évaluation a bien été enregistrée, merci !";
-
-        /**
          * Message d'erreur lors de l'échec de l'enregistrement d'un vote.
-         *
-         * <p><b>Valeur :</b> "Erreur lors de l'enregistrement du vote."</p>
-         *
-         * <p><b>Utilisé dans :</b></p>
-         * <ul>
-         *   <li>Application.addBasicEvaluation() en cas d'échec</li>
-         * </ul>
          */
         public static final String ERROR_VOTE_FAILED = "Erreur lors de l'enregistrement du vote.";
 
         /**
          * Message d'erreur lors de l'échec de l'enregistrement d'une évaluation complète.
-         *
-         * <p><b>Valeur :</b> "Erreur lors de l'enregistrement de l'évaluation."</p>
-         *
-         * <p><b>Utilisé dans :</b></p>
-         * <ul>
-         *   <li>Application.evaluateRestaurant() en cas d'échec</li>
-         * </ul>
          */
         public static final String ERROR_EVALUATION_FAILED = "Erreur lors de l'enregistrement de l'évaluation.";
 
         /**
+         * Message d'erreur lors de l'échec de création d'un restaurant.
+         */
+        public static final String ERROR_RESTAURANT_CREATE_FAILED = "Erreur lors de la création du restaurant.";
+
+        /**
+         * Message d'erreur lors de l'échec de modification d'un restaurant.
+         */
+        public static final String ERROR_RESTAURANT_UPDATE_FAILED = "Erreur lors de la modification du restaurant.";
+
+        /**
+         * Message d'erreur lors de l'échec de suppression d'un restaurant.
+         */
+        public static final String ERROR_RESTAURANT_DELETE_FAILED = "Erreur lors de la suppression du restaurant.";
+
+        /**
+         * Message d'erreur lors de l'échec de modification d'une adresse.
+         */
+        public static final String ERROR_ADDRESS_UPDATE_FAILED = "Erreur lors de la modification de l'adresse.";
+
+        /**
+         * Message affiché lorsqu'une note est invalide (hors de la plage MIN_GRADE - MAX_GRADE).
+         * Contient des placeholders pour MIN_GRADE et MAX_GRADE.
+         */
+        public static final String ERROR_INVALID_GRADE = "❌ Note invalide ! Veuillez entrer une note entre %d et %d :";
+
+        // ========== Messages de succès ==========
+
+        /**
+         * Message de succès après l'enregistrement d'un vote (like/dislike).
+         */
+        public static final String SUCCESS_VOTE_RECORDED = "Votre vote a été pris en compte !";
+
+        /**
+         * Message de succès après l'enregistrement d'une évaluation complète.
+         */
+        public static final String SUCCESS_EVALUATION_RECORDED = "Votre évaluation a bien été enregistrée, merci !";
+
+        /**
+         * Message de succès après la création d'un restaurant.
+         */
+        public static final String SUCCESS_RESTAURANT_CREATED = "Restaurant créé avec succès !";
+
+        /**
+         * Message de succès après la modification d'un restaurant.
+         */
+        public static final String SUCCESS_RESTAURANT_UPDATED = "Le restaurant a bien été modifié !";
+
+        /**
+         * Message de succès après la suppression d'un restaurant.
+         */
+        public static final String SUCCESS_RESTAURANT_DELETED = "Le restaurant a bien été supprimé !";
+
+        /**
+         * Message de succès après la modification d'une adresse.
+         */
+        public static final String SUCCESS_ADDRESS_UPDATED = "L'adresse a bien été modifiée !";
+
+        /**
+         * Message de succès après la création d'une ville.
+         */
+        public static final String SUCCESS_CITY_CREATED = "Ville créée avec succès !";
+
+        // ========== Messages informatifs ==========
+
+        /**
+         * Message affiché quand aucun restaurant n'est trouvé.
+         */
+        public static final String INFO_NO_RESTAURANT_FOUND = "Aucun restaurant n'a été trouvé !";
+
+        /**
+         * Message affiché quand une recherche est annulée.
+         */
+        public static final String INFO_SEARCH_CANCELLED = "Recherche annulée";
+
+        /**
+         * Message affiché quand une suppression est annulée.
+         */
+        public static final String INFO_DELETE_CANCELLED = "Suppression annulée.";
+
+        /**
+         * Message affiché quand aucun restaurant ne correspond au nom saisi.
+         */
+        public static final String INFO_NO_RESTAURANT_WITH_NAME = "Aucun restaurant trouvé avec ce nom.";
+
+        /**
+         * Message affiché quand aucune ville ne correspond au NPA saisi.
+         */
+        public static final String INFO_NO_CITY_WITH_ZIPCODE = "Aucune ville trouvée avec ce NPA.";
+
+        /**
+         * Message affiché quand aucun type ne correspond au libellé saisi.
+         */
+        public static final String INFO_NO_TYPE_WITH_LABEL = "Aucun type trouvé avec ce libellé.";
+
+        // ========== Messages de prompt ==========
+
+        /**
          * Message de prompt demandant à l'utilisateur de noter selon l'échelle définie.
          * Contient des placeholders pour MIN_GRADE et MAX_GRADE.
-         *
-         * <p><b>Valeur :</b> "Veuillez svp donner une note entre %d et %d pour chacun de ces critères : "</p>
-         *
-         * <p><b>Utilisation avec String.format() :</b></p>
-         * <pre>
-         * System.out.printf(Messages.PROMPT_GRADE_RANGE,
-         *                   Evaluation.MIN_GRADE,    // %d → 1
-         *                   Evaluation.MAX_GRADE);   // %d → 5
-         *
-         * // Affiche : "Veuillez svp donner une note entre 1 et 5 pour chacun de ces critères : "
-         * </pre>
-         *
-         * <p><b>Note :</b> Les valeurs MIN_GRADE et MAX_GRADE proviennent de
-         * {@link Evaluation#MIN_GRADE} et {@link Evaluation#MAX_GRADE}.</p>
          */
         public static final String PROMPT_GRADE_RANGE = "Veuillez svp donner une note entre %d et %d pour chacun de ces critères : ";
+
+        /**
+         * Message demandant à l'utilisateur d'entrer une partie du nom recherché.
+         */
+        public static final String PROMPT_ENTER_NAME_PART = "Entrez une partie du nom recherché : ";
+
+        /**
+         * Message demandant à l'utilisateur d'entrer une partie du nom de ville.
+         */
+        public static final String PROMPT_ENTER_CITY_PART = "Entrez une partie du nom de la ville : ";
+
+        /**
+         * Message de confirmation avant suppression d'un restaurant.
+         */
+        public static final String PROMPT_DELETE_CONFIRM = "Êtes-vous sûr de vouloir supprimer ce restaurant ? (O/n) : ";
+
+        // ========== Messages d'avertissement ==========
+
+        /**
+         * Avertissement avant une action irréversible (suppression).
+         */
+        public static final String WARNING_IRREVERSIBLE_ACTION = "⚠️  ATTENTION : Cette action est irréversible !";
     }
 }
